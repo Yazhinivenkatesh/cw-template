@@ -1,0 +1,2 @@
+6a590d9001ff0d3dcf42c7c82b52bb64e488fcca12db2be8a0d314861d547d11  ./target/wasm32-unknown-unknown/release/test_contract.wasm
+caf1f7c72f75b6536ab56302435e785b38af62a1b858263a22cf2bda132403a1  ./target/wasm32-unknown-unknown/release/token_contract.wasm

@@ -1,0 +1,2 @@
+fba88dd3cbccc48807a53fdb285ef2df29d2d731dd5dd0be16b966e995308c7e  test_contract.wasm
+a567b5ed41c44453fbee9881cad5705c24906188f0fd33df00763cdf89fcd135  token_contract.wasm
