@@ -1,14 +1,15 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, WasmMsg, Uint128,};
+use cosmwasm_std::{
+    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response,
+    StdResult, Uint128, WasmQuery, QueryRequest,
+};
 use cw2::set_contract_version;
 pub use cw20::{Cw20ExecuteMsg, Cw20QueryMsg};
 
 use crate::error::ContractError;
-use crate::msg::{NameResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{
-    NameInfo, NAME_INFO,
-};
+use crate::msg::{ExecuteMsg, InstantiateMsg, NameResponse, QueryMsg};
+use crate::state::{NameInfo, NAME_INFO};
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:mlm-contract";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -44,30 +45,30 @@ pub fn execute(
     }
 }
 
-pub fn try_reset(deps: DepsMut, info: MessageInfo, name: String, amount: Uint128) -> Result<Response, ContractError> {
-    // NAME_INFO.update(deps.storage, |mut state: NameInfo| -> Result<_, ContractError> {
-        // if info.sender == state.admin {
-            let address = "juno14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9skjuwg8"; 
-            let recipient = "juno17prykl9pjyqmekwpw7cck76h522qsrqd3xjkfq".to_string();
-            let owner = "juno1cdyrynca86thd8mlt23zxe3hmcmfxk8h9mmmz8".to_string();
-                    // if info.sender == state.admin {
-            let msg = Cw20ExecuteMsg::TransferFrom {
-                owner: owner.clone(),
-                recipient: recipient.clone(),
-                amount: amount,
-            };
-            let wasm_msg = WasmMsg::Execute {
-                contract_addr: address.to_string(),
-                msg: to_binary(&msg)?,
-                funds: vec![],
-            };
-           let res = Response::new().add_message(wasm_msg);
-        // }
-        // state.name = name; 
-        Ok(res)
-    // })?;
-    // Ok(Response::new().add_attribute("method", "reset"))
+pub fn try_reset(
+    deps: DepsMut,
+    info: MessageInfo,
+    name: String,
+    amount: Uint128,
+) -> Result<Response, ContractError>{
+    let address = "juno14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9skjuwg8";
+    let recipient = "juno17prykl9pjyqmekwpw7cck76h522qsrqd3xjkfq".to_string();
+    // let owner = "juno1cdyrynca86thd8mlt23zxe3hmcmfxk8h9mmmz8".to_string();
+
+    let msg = Cw20QueryMsg::Balance { address: recipient };
+
+    let request = WasmQuery::Smart {
+        contract_addr: address.to_string(),
+        msg: to_binary(&msg)?,
+    };
+    let response: cw20::BalanceResponse =
+    deps.querier.query(&QueryRequest::Wasm(request))?;
+
+    // state.name = name;
+    Ok(Response::new()
+        .add_attribute("balance", response.balance))
 }
+
 
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
@@ -77,9 +78,11 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 fn query_name_info(deps: Deps) -> StdResult<NameResponse> {
     let state = NAME_INFO.load(deps.storage)?;
-    Ok(NameResponse { name: state.name, admin: state.admin.to_string(), })
+    Ok(NameResponse {
+        name: state.name,
+        admin: state.admin.to_string(),
+    })
 }
-
 
 // #[cfg(test)]
 // mod tests {

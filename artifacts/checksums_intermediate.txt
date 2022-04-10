@@ -1,1 +1,1 @@
-7ef97a3648cd4270a128f80615a8fcb738941474d2efc49d0c3ac9d471458e5c  ./target/wasm32-unknown-unknown/release/mlm_contract.wasm
+54e303dd5950eaddd0df08b9d2fd272a2a91fa32a6897021496f00d78f119fd2  ./target/wasm32-unknown-unknown/release/mlm_contract.wasm
