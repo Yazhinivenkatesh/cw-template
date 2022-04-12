@@ -3,7 +3,7 @@ use std::fs::create_dir_all;
 
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 
-use mlm_contract::msg::{NameResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use mlm_contract::msg::{ ExecuteMsg, InstantiateMsg, QueryMsg};
 // use mlm_contract::state::State;
 
 fn main() {
@@ -16,5 +16,5 @@ fn main() {
     export_schema(&schema_for!(ExecuteMsg), &out_dir);
     export_schema(&schema_for!(QueryMsg), &out_dir);
     // export_schema(&schema_for!(State), &out_dir);
-    export_schema(&schema_for!(NameResponse), &out_dir);
+    
 }
