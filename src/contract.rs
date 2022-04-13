@@ -57,7 +57,7 @@ pub fn add_plan(
         
         let mut plan_record = PLAN_INFO.load(deps.storage)?;
         if plan_record.plans.iter().any(|p| p.name == name) {
-            return Err(ContractError::CustomError { val: "Plan already exisits".to_string() });
+            return Err(ContractError::CustomError { val: "Plan already exists".to_string() });
         }
 
         plan_record.plans.push(PlanDetail {
