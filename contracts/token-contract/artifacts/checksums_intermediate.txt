@@ -1,0 +1,1 @@
+096cc098b788675612e972c6cb61f00f1c302ee51d03685e3571b993a0958a2d  ./target/wasm32-unknown-unknown/release/token_contract.wasm
