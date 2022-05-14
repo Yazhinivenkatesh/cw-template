@@ -15,7 +15,7 @@ func (k msgServer) AddUser(goCtx context.Context, msg *types.MsgAddUser) (*types
 
 	userDetail, isFound := k.GetUserDetail(ctx, msg.UserName)
 
-	price := sdk.Coins{sdk.NewInt64Coin("token", 50)}
+	price := sdk.Coins{sdk.NewInt64Coin("token", 500)}
 
 	userName, _ := sdk.AccAddressFromBech32(msg.Creator)
 	referrerId, _ := sdk.AccAddressFromBech32(userDetail.ReferrerId)
