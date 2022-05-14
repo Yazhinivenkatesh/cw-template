@@ -1,0 +1,12 @@
+syntax = "proto3";
+package calibchain.mlmservice.mlmservice;
+
+option go_package = "github.com/calibchain/mlmservice/x/mlmservice/types";
+
+message UserDetail {
+  string index = 1; 
+  string userName = 2; 
+  string referrerId = 3; 
+  
+}
+

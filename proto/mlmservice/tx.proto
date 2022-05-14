@@ -1,0 +1,23 @@
+syntax = "proto3";
+package calibchain.mlmservice.mlmservice;
+
+// this line is used by starport scaffolding # proto/tx/import
+
+option go_package = "github.com/calibchain/mlmservice/x/mlmservice/types";
+
+// Msg defines the Msg service.
+service Msg {
+      rpc AddUser(MsgAddUser) returns (MsgAddUserResponse);
+// this line is used by starport scaffolding # proto/tx/rpc
+}
+
+message MsgAddUser {
+  string creator = 1;
+  string userName = 2;
+  string referrerId = 3;
+}
+
+message MsgAddUserResponse {
+}
+
+// this line is used by starport scaffolding # proto/tx/message
