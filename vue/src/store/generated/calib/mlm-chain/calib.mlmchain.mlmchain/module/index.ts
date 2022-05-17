@@ -4,9 +4,13 @@ import { StdFee } from "@cosmjs/launchpad";
 import { SigningStargateClient } from "@cosmjs/stargate";
 import { Registry, OfflineSigner, EncodeObject, DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { Api } from "./rest";
+import { MsgBuyName } from "./types/mlmchain/tx";
+import { MsgSetName } from "./types/mlmchain/tx";
 
 
 const types = [
+  ["/calib.mlmchain.mlmchain.MsgBuyName", MsgBuyName],
+  ["/calib.mlmchain.mlmchain.MsgSetName", MsgSetName],
   
 ];
 export const MissingWalletError = new Error("wallet is required");
@@ -39,6 +43,8 @@ const txClient = async (wallet: OfflineSigner, { addr: addr }: TxClientOptions =
 
   return {
     signAndBroadcast: (msgs: EncodeObject[], { fee, memo }: SignAndBroadcastOptions = {fee: defaultFee, memo: ""}) => client.signAndBroadcast(address, msgs, fee,memo),
+    msgBuyName: (data: MsgBuyName): EncodeObject => ({ typeUrl: "/calib.mlmchain.mlmchain.MsgBuyName", value: MsgBuyName.fromPartial( data ) }),
+    msgSetName: (data: MsgSetName): EncodeObject => ({ typeUrl: "/calib.mlmchain.mlmchain.MsgSetName", value: MsgSetName.fromPartial( data ) }),
     
   };
 };

@@ -3,6 +3,7 @@ package calib.mlmchain.mlmchain;
 
 import "gogoproto/gogo.proto";
 import "mlmchain/params.proto";
+import "mlmchain/whois.proto";
 // this line is used by starport scaffolding # genesis/proto/import
 
 option go_package = "github.com/calib/mlm-chain/x/mlmchain/types";
@@ -10,5 +11,6 @@ option go_package = "github.com/calib/mlm-chain/x/mlmchain/types";
 // GenesisState defines the mlmchain module's genesis state.
 message GenesisState {
   Params params = 1 [(gogoproto.nullable) = false];
+  repeated Whois whoisList = 2 [(gogoproto.nullable) = false];
   // this line is used by starport scaffolding # genesis/proto/state
 }
