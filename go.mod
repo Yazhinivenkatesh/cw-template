@@ -3,8 +3,9 @@ module github.com/calib/mlm-chain
 go 1.16
 
 require (
+	github.com/CosmWasm/wasmd v0.27.0-junity.0
 	github.com/cosmos/cosmos-sdk v0.45.3
-	github.com/cosmos/ibc-go/v2 v2.0.3
+	github.com/cosmos/ibc-go/v2 v2.2.0
 	github.com/gogo/protobuf v1.3.3
 	github.com/golang/protobuf v1.5.2
 	github.com/gorilla/mux v1.8.0
@@ -15,10 +16,16 @@ require (
 	github.com/stretchr/testify v1.7.1
 	github.com/tendermint/spn v0.1.1-0.20220407154406-5cfd1bf28150
 	github.com/tendermint/tendermint v0.34.19
-	github.com/tendermint/tm-db v0.6.6
+	github.com/tendermint/tm-db v0.6.7
 	google.golang.org/genproto v0.0.0-20220317150908-0efb43f6373e
 	google.golang.org/grpc v1.45.0
 	gopkg.in/yaml.v2 v2.4.0
+)
+
+require (
+	github.com/CosmWasm/wasmvm v1.0.0-beta7 // indirect
+	github.com/CosmosContracts/juno v1.0.2
+	github.com/prometheus/client_golang v1.12.1
 )
 
 replace (

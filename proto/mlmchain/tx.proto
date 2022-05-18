@@ -7,7 +7,27 @@ option go_package = "github.com/calib/mlm-chain/x/mlmchain/types";
 
 // Msg defines the Msg service.
 service Msg {
-    // this line is used by starport scaffolding # proto/tx/rpc
+      rpc BuyName(MsgBuyName) returns (MsgBuyNameResponse);
+  rpc SetName(MsgSetName) returns (MsgSetNameResponse);
+// this line is used by starport scaffolding # proto/tx/rpc
+}
+
+message MsgBuyName {
+  string creator = 1;
+  string name = 2;
+  string price = 3;
+}
+
+message MsgBuyNameResponse {
+}
+
+message MsgSetName {
+  string creator = 1;
+  string name = 2;
+  string value = 3;
+}
+
+message MsgSetNameResponse {
 }
 
 // this line is used by starport scaffolding # proto/tx/message

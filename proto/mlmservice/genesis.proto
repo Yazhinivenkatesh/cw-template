@@ -1,0 +1,14 @@
+syntax = "proto3";
+package calib.mlmchain.mlmservice;
+
+import "gogoproto/gogo.proto";
+import "mlmservice/params.proto";
+// this line is used by starport scaffolding # genesis/proto/import
+
+option go_package = "github.com/calib/mlm-chain/x/mlmservice/types";
+
+// GenesisState defines the mlmservice module's genesis state.
+message GenesisState {
+  Params params = 1 [(gogoproto.nullable) = false];
+  // this line is used by starport scaffolding # genesis/proto/state
+}
