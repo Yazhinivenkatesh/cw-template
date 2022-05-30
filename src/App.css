@@ -1,3 +1,5 @@
+@import "antd/dist/antd.css";
+
 .App {
   text-align: center;
 }
@@ -28,11 +30,37 @@
   color: #61dafb;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Rubik";
+  color: white;
+  margin: 0px;
+  padding: 0px;
+}
+
+.flex-and-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.flex-and-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.border-radius {
+  border-radius: 5px;
+}
+
+.object-fit-contain {
+  object-fit: contain;
 }

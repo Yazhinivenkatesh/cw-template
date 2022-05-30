@@ -1,16 +1,13 @@
-import './App.css';
-import { BrowserRouter as Router, Switch, Route} from 'react-router-dom';
-import AddReferral from './AddReferral';
+import "./App.css";
+import Header from "./components/Header";
+import Landing from "./screens/Landing";
 
 function App() {
   return (
-    <Router>
-    <div className="App">
-      <Switch>
-      <Route exact path='/add-referral' component={AddReferral}/>
-    </Switch>
+    <div>
+      <Header />
+      <Landing />
     </div>
-    </Router>
   );
 }
 

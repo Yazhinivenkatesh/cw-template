@@ -1,0 +1,44 @@
+.bg {
+  background-color: rgb(1, 4, 16);
+}
+
+.chain-details {
+  border: 1px solid rgb(4, 4, 15);
+  padding: 12px;
+}
+
+.key {
+  font-weight: bold;
+  color: rgb(39, 0, 125);
+}
+
+.value {
+}
+
+.connect-btn {
+  background-color: rebeccapurple;
+  color: white;
+  height: auto;
+}
+
+.chain-logo {
+  height: 50px;
+}
+
+.address {
+  color: rebeccapurple;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.coins {
+  color: rebeccapurple;
+  font-weight: bold;
+}
+
+.tokens {
+  color: tomato;
+  font-weight: bold;
+}
