@@ -5,7 +5,7 @@ import {
   SigningCosmWasmClient,
 } from "@cosmjs/cosmwasm-stargate";
 import { GasPrice } from "@cosmjs/stargate";
-import { HttpClient, Tendermint34Client } from "@cosmjs/tendermint-rpc";
+import { Tendermint34Client } from "@cosmjs/tendermint-rpc";
 import { map } from "lodash";
 import { Col, Divider, Input, InputNumber, Row } from "antd";
 
@@ -23,6 +23,10 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 import Modal from '@mui/material/Modal';
+import axios from "axios";
+import { ToastContainer, toast } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
+
 
 
 const Landing = () => {
@@ -37,27 +41,31 @@ const Landing = () => {
     boxShadow: 50,
     p: 4,
   };
+
   const defaultBalance = {
     coinBalance: "0 calib",
-    tokenBalance: " 0 tokens",
+    tokenBalance: " 0",
   };
 
   const [referrer, setReferrer] = useState("");
   const [planName, setPlanName] = useState("");
   const [faucetAddress, setFaucetAddress] = useState("");
   const [connected, setConnected] = useState(false);
-  const [approved, setApproved] = useState(false);
   const [account, setAccount] = useState("");
-  // const [accountBalance, setTokenBalance] = useState(defaultBalance);
+  const [accountBalance, setAccountBalance] = useState(defaultBalance);
   let [amount, setAmount] = useState("");
-  const [tokenBalance, setTokenBalance] = useState("");
   const [txLogs, addTxLogs] = useState([]);
+  const [referralList, setReferralList] = useState([]);
   const [open, setOpen] = useState(false);
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
+  const [isInitialized, setInitialized] = useState(false);
+
   useEffect(() => {
     initialize();
+    // getReferralList();
+    // getCoinBalance();
   }, []);
 
   const defaultChainData = {
@@ -91,7 +99,6 @@ const Landing = () => {
       setConnected(true);
     } catch (error) {
       setConnected(false);
-      console.log(error);
     }
   };
 
@@ -100,6 +107,8 @@ const Landing = () => {
 
   const tokenContractAddress =
     "calib14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9scdfxd2";
+
+  const admin = "calib1ays90mvzfr09fqgjet23mmpxvuvnnafpflj74k";
 
   let cwClient, client, accounts, offlineSigner;
 
@@ -115,127 +124,183 @@ const Landing = () => {
 
     cwClient = new SigningCosmWasmClient(tmClient, offlineSigner, options);
 
-    console.log(cwClient);
     client = await CosmWasmClient.connect(
       "http://localhost:26657",
     )
+
+    setInitialized(true);
   };
+
+  useEffect(() => {
+    console.log("ACCOUNT", account)
+    setTimeout(
+      () => getReferralList(), 100
+    )
+  }, [isInitialized])
 
   const addTxLog = (txHash, status) => {
     txLogs.push({ txHash, status });
     addTxLogs(txLogs);
   };
 
-  const getBalance = async () => {
+  const getReferralList = async () => {
     await initialize();
-    const res = await client.queryContractSmart(tokenContractAddress, { "balance": { "address": account } })
-    setTokenBalance(res.balance)
+    const response = await client.queryContractSmart(mlmContractAddress, { "get_level_detail": { "address": account, "level_count": "1" } })
+    console.log(response[0]['referrals'])
+    setReferralList(list => response[0]['referrals'])
+  }
+
+  const getCoinBalance = async () => {
+    const response = await axios.get(`http://localhost:1317/cosmos/bank/v1beta1/balances/${account}?pagination.limit=1000`);
+    const balance = {
+      'coinBalance': response.data.balances[0].amount,
+      'tokenBalance': 0
+    }
+    setAccountBalance(balance);
+    await getTokenBalance();
+  }
+
+  const getTokenBalance = async () => {
+    await initialize();
+    const result = await client.queryContractSmart(tokenContractAddress, { "balance": { "address": account } })
+    setAccountBalance(prev => ({ ...prev, 'tokenBalance': result.balance }))
   }
 
   const allowance = async () => {
     try {
       await initialize();
-      console.log(client);
-      const data = await client.queryContractSmart(mlmContractAddress, { "get_all_referral_datas": {} })
-      console.log(data)
+      debugger
       const response = await client.queryContractSmart(tokenContractAddress, { "allowance": { "owner": account, "spender": mlmContractAddress } })
       if (response.allowance === "0") {
-        const res = await cwClient.execute(accounts[0].address, tokenContractAddress, { "increase_allowance": { "spender": mlmContractAddress, "amount": "10000" } }, stdFee)
-        alert("Appoved Successfully")
+        const result = await cwClient.execute(accounts[0].address, tokenContractAddress, { "increase_allowance": { "spender": mlmContractAddress, "amount": "10000" } }, stdFee)
+        console.log("res from allowance", result)
+        toast.success("APPROVED SUCCESSFULLY" + result.transactionHash);
       }
-      // if (response.allowance > 0) {
-      //   setApproved(true)
-      // }
     } catch (err) {
-      alert(err)
-      setApproved(false)
+      const error = err?.message;
+      if (error.includes("rejected")) {
+        toast.error("USER DENIED TRANSACTION")
+      } else {
+        toast.error("ERROR WHILE PROVIDING ALLOWANCE")
+      }
     }
   };
 
   const addReferrer = async () => {
     try {
       await initialize();
-      const res = await cwClient.execute(
+      const response = await cwClient.execute(
         accounts[0].address,
         mlmContractAddress,
         { "add_referral": { referrer: referrer } },
         stdFee
       );
-      console.log(res);
-
-      alert("Referral Added Successfully");
+      console.log("RES from add-ref", response);
+      toast.success("REFERRAL ADDED SUCCESSFULLY" + response.transactionHash);
     } catch (err) {
-      console.log(err);
-      const error = err?.message;
-      alert(error);
+      console.log("ERROR", err);
+      const error = err?.message
+      switch (true) {
+        case (error.includes("OWN")):
+          toast.error("REFERRAL CANNOT BE HIS OWN REFERRER");
+          break;
+        case (error.includes("ONE")):
+          toast.error("REFERRAL CANNOT BE ONE OF REFERRER UPLINES");
+          break;
+        case (error.includes("addr_validate")):
+          toast.error("INVALID ADDRESS");
+          break;
+        case (error.includes("rejected")):
+          toast.error("USER DENIED TRANSACTION");
+          break;
+        default:
+          toast.error("SOMETHING WENT WRONG, RETRY AFTER SOME TIME")
+      }
     }
   };
 
   const payReferrer = async () => {
     try {
       await initialize();
-      const res = await cwClient.execute(
+      const response = await cwClient.execute(
         accounts[0].address,
         mlmContractAddress,
         { "pay_referral": { plan_name: planName } },
         stdFee
       );
-      console.log(res);
-      alert("Paid Successfully");
+      console.log("res from pay", response);
+      toast.success("PAID SUCCESSFULLY" + response.transactionHash);
     } catch (err) {
-      console.log(err);
+      console.log("ERROR", err)
       const error = err?.message;
-      if (error.includes("allowance")) {
-        allowance();
-      } else {
-        alert(error);
+      switch (true) {
+        case (error.includes("exist")):
+          toast.error("PLAN DOES NOT EXIST");
+          break;
+        case (error.includes("ALREADY")):
+          toast.error("USER ALREADY PAID");
+          break;
+        case (error.includes("ENOUGH")):
+          toast.error("USER BALANCE IS NOT ENOUGH");
+          break;
+        case (error.includes("rejected")):
+          toast.error("USER DENIED TRANSACTION");
+          break;
+        case (error.includes("allowance")):
+          allowance();
+          break;
+        default:
+          toast.error("SOMETHING WENT WRONG, RETRY AFTER SOME TIME");
       }
     }
   };
 
   const buyTokens = async () => {
-    debugger
-    await initialize();
-    console.log("AMOUNT", amount)
-    amount = parseFloat(amount);
-    if (isNaN(amount)) {
-      alert("Invalid amount");
-      return false;
-    }
+    try {
+      await initialize();
+      amount = parseFloat(amount);
+      if (isNaN(amount)) {
+        toast.error("INVALID AMOUNT");
+        return false;
+      }
 
-    amount *= 1000000;
-    amount = Math.floor(amount);
+      amount *= 1000000;
+      amount = Math.floor(amount);
 
-    const amountFinal = {
-      denom: "calib",
-      amount: amount.toString(),
-    };
+      const amountFinal = {
+        denom: "calib",
+        amount: amount.toString(),
+      };
 
-    const result = await cwClient.sendTokens(
-      accounts[0].address,
-      "calib1ays90mvzfr09fqgjet23mmpxvuvnnafpflj74k",
-      [amountFinal],
-      stdFee,
-      ""
-    );
-
-    if (result.code !== undefined && result.code !== 0) {
-      console.log("FAILED", result);
-      alert("Failed to send tx: " + result.log || result.rawLog);
-    } else {
-      console.log(result);
-      alert("Succeed to send tx:" + result.transactionHash);
-      const res = await cwClient.execute(
+      const result = await cwClient.sendTokens(
         accounts[0].address,
-        mlmContractAddress,
-        { "buy_tokens": { amount_to_buy: amount.toString() } },
-        stdFee
+        admin,
+        [amountFinal],
+        stdFee,
+        ""
       );
-      console.log(res);
-      if (res.code !== undefined && res.code !== 0) {
-        alert("Failed to send tx: " + res.log || res.rawLog);
+
+      if (result.code !== undefined && result.code === 0) {
+        toast.success("SUCCESSFULLY SENT CALIB COINS");
+
+        const response = await cwClient.execute(
+          accounts[0].address,
+          mlmContractAddress,
+          { "buy_tokens": { amount_to_buy: amount.toString() } },
+          stdFee
+        );
+        console.log("Res from buy", response)
+        toast.success("TOKENS BOUGHT SUCCESSFULLY");
       } else {
-        alert("Succeed to send tx:" + res.transactionHash);
+        toast.error("TRANSACTION FAILED: USER DOES NOT HAVE ENOUGH COINS TO SEND !");
+      }
+    } catch (err) {
+      const error = err?.message;
+      console.log("err from buy", error)
+      if (error.includes("rejected")) {
+        toast.error("USER DENIED TRANSACTION");
+      } else {
+        toast.error("SOMETHING WENT WRONG, RETRY AFTER SOME TIME")
       }
     }
   };
@@ -309,19 +374,9 @@ const Landing = () => {
     },
   ];
 
-  const planInputs = [
-    {
-      key: "name",
-      name: "Plan name",
-    },
-    {
-      key: "price",
-      name: "Plan price",
-    },
-  ];
-
   return (
     <Row>
+      <ToastContainer />
       <Col lg={{ span: 8 }} className="p-5">
         <Col className="border-radius chain-details">
           <div className="mb-3">
@@ -368,16 +423,6 @@ const Landing = () => {
               <h6 className="p-2">Pay now</h6>
             </Button>
           </div>
-          {/* <div className="mb-3">
-            <h2 className="text-black">Allowance</h2>
-            <Button
-              variant="contained"
-              onClick={allowance}
-              className="mt-3 w-100 border-radius connect-btn "
-            >
-              <h6 className="p-2">{approved ? "Approved" : "Approve"} </h6>
-            </Button>
-          </div> */}
         </Col>
       </Col>
       <Col lg={{ span: 8 }} className="p-5">
@@ -414,25 +459,26 @@ const Landing = () => {
               />
             </div>
             <Col span={20} className="ms-3 mb-3">
-              {/* <div className="d-flex mb-2">
-                <h5 className="text-black ">Coin balance&nbsp;&nbsp;</h5>
-                <h5 className="coins ms-3">{""}</h5>
-              </div> */}
+              <div className="d-flex mb-2">
+                <h5 className="text-black ">Coin balance :</h5>
+                <h5 className="coins ms-3">{accountBalance.coinBalance} coins</h5>
+
+              </div>
               <div className="d-flex align-items-center mb-2">
                 <h5 className="text-black">Token balance :</h5>
-                <Button
-                  variant="contained"
-                  className="w-10 mb-2"
-                  onClick={getBalance}
-                >
-                  check balance
-                </Button>
-                <h5 className="tokens ms-3">{tokenBalance} tokens</h5>
+                <h5 className="tokens ms-3">{accountBalance.tokenBalance} tokens</h5>
               </div>
             </Col>
             <Button
               variant="contained"
-              className="w-100 mb-2"
+              className="w-50 mb-2"
+              onClick={getCoinBalance}
+            >
+              check balance
+            </Button>
+            <Button
+              variant="contained"
+              className="w-50 mb-2"
               onClick={handleOpen}
             >
               Get more tokens
@@ -474,8 +520,9 @@ const Landing = () => {
         <Col lg={{ span: 24 }} className="chain-details border-radius">
           <h2 className="text-black">Network configuration</h2>
           <div className="flex-and-between">
-            {map(inputs, (input) => (
+            {map(inputs, (input, i) => (
               <TextField
+                key={i}
                 id="outlined-text-input"
                 label={input.name}
                 type="text"
@@ -509,6 +556,22 @@ const Landing = () => {
           </Button>
         </Col>
       </Col>
+      <table>
+        <thead>
+          <tr>
+            <th>Wallet Address</th>
+            <th>Amount Received</th>
+          </tr>
+        </thead>
+        <tbody>
+          {referralList && referralList.map(referral => (
+            <tr key={referral}>
+              <td>{referral.referral}</td>
+              <td>{referral['amount_paid']}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </Row>
   );
 };

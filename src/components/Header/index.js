@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 
 const Header = () => {
   const [account, setAccount] = useState(null);
-
+  
   window.onload = async () => {
     const response = await connectWallet();
     if (response != null) {
