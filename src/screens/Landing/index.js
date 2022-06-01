@@ -36,7 +36,6 @@ import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 
 
-
 const Landing = () => {
   const style = {
     position: 'absolute',
@@ -92,7 +91,7 @@ const Landing = () => {
 
   useEffect(() => {
     initialize();
-  }, []);
+  });
 
   const defaultChainData = {
     chainName: "Calib",
@@ -162,8 +161,9 @@ const Landing = () => {
     )
   }, [isInitialized])
 
-  const addTxLog = (txHash, status) => {
-    txLogs.push({ txHash, status });
+  const addTxLog = (txHash, status, fnName) => {
+    debugger
+    txLogs.push({ txHash, status, fnName });
     addTxLogs(txLogs);
   };
 
@@ -217,7 +217,9 @@ const Landing = () => {
         { "add_referral": { referrer: referrer } },
         stdFee
       );
-      toast.success("REFERRAL ADDED SUCCESSFULLY" + response.transactionHash);
+      const txHash = response.transactionHash;
+      toast.success("REFERRAL ADDED SUCCESSFULLY");
+      addTxLog(txHash, "success", "add-referral");
     } catch (err) {
       const error = err?.message
       switch (true) {
@@ -249,6 +251,8 @@ const Landing = () => {
         stdFee
       );
       toast.success("PAID SUCCESSFULLY" + response.transactionHash);
+      const txHash = response.transactionHash;
+      addTxLog(txHash, "success", "pay-referral");
     } catch (err) {
       const error = err?.message;
       switch (true) {
@@ -274,6 +278,7 @@ const Landing = () => {
   };
 
   const buyTokens = async () => {
+    let txHash;
     try {
       await initialize();
       amount = parseFloat(amount);
@@ -299,6 +304,8 @@ const Landing = () => {
       );
 
       if (result.code !== undefined && result.code === 0) {
+        txHash = result.transactionHash;
+        addTxLog(txHash, "success", "sent-coins");
         toast.success("SUCCESSFULLY SENT CALIB COINS");
 
         const response = await cwClient.execute(
@@ -307,6 +314,8 @@ const Landing = () => {
           { "buy_tokens": { amount_to_buy: amount.toString() } },
           stdFee
         );
+        txHash = response.transactionHash;
+        addTxLog(txHash, "success", "buy-tokens");
         toast.success("TOKENS BOUGHT SUCCESSFULLY");
       } else {
         toast.error("TRANSACTION FAILED: USER DOES NOT HAVE ENOUGH COINS TO SEND !");
