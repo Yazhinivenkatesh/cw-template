@@ -26,6 +26,14 @@ import Modal from '@mui/material/Modal';
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
+import { styled } from '@mui/material/styles';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell, { tableCellClasses } from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
 
 
 
@@ -41,6 +49,26 @@ const Landing = () => {
     boxShadow: 50,
     p: 4,
   };
+
+  const StyledTableCell = styled(TableCell)(({ theme }) => ({
+    [`&.${tableCellClasses.head}`]: {
+      backgroundColor: theme.palette.common.black,
+      color: theme.palette.common.white,
+    },
+    [`&.${tableCellClasses.body}`]: {
+      fontSize: 17,
+    },
+  }));
+  
+  const StyledTableRow = styled(TableRow)(({ theme }) => ({
+    '&:nth-of-type(odd)': {
+      backgroundColor: theme.palette.action.hover,
+    },
+    // hide last border
+    '&:last-child td, &:last-child th': {
+      border: 0,
+    },
+  }));
 
   const defaultBalance = {
     coinBalance: "0 calib",
@@ -64,8 +92,6 @@ const Landing = () => {
 
   useEffect(() => {
     initialize();
-    // getReferralList();
-    // getCoinBalance();
   }, []);
 
   const defaultChainData = {
@@ -93,7 +119,6 @@ const Landing = () => {
 
   const addNetwork = async () => {
     const data = await CosmWasmClient.connect(chainData.rpcEndpoint);
-    console.log(data);
     try {
       await suggestChain(chainData);
       setConnected(true);
@@ -132,7 +157,6 @@ const Landing = () => {
   };
 
   useEffect(() => {
-    console.log("ACCOUNT", account)
     setTimeout(
       () => getReferralList(), 100
     )
@@ -146,7 +170,6 @@ const Landing = () => {
   const getReferralList = async () => {
     await initialize();
     const response = await client.queryContractSmart(mlmContractAddress, { "get_level_detail": { "address": account, "level_count": "1" } })
-    console.log(response[0]['referrals'])
     setReferralList(list => response[0]['referrals'])
   }
 
@@ -173,7 +196,6 @@ const Landing = () => {
       const response = await client.queryContractSmart(tokenContractAddress, { "allowance": { "owner": account, "spender": mlmContractAddress } })
       if (response.allowance === "0") {
         const result = await cwClient.execute(accounts[0].address, tokenContractAddress, { "increase_allowance": { "spender": mlmContractAddress, "amount": "10000" } }, stdFee)
-        console.log("res from allowance", result)
         toast.success("APPROVED SUCCESSFULLY" + result.transactionHash);
       }
     } catch (err) {
@@ -195,10 +217,8 @@ const Landing = () => {
         { "add_referral": { referrer: referrer } },
         stdFee
       );
-      console.log("RES from add-ref", response);
       toast.success("REFERRAL ADDED SUCCESSFULLY" + response.transactionHash);
     } catch (err) {
-      console.log("ERROR", err);
       const error = err?.message
       switch (true) {
         case (error.includes("OWN")):
@@ -228,10 +248,8 @@ const Landing = () => {
         { "pay_referral": { plan_name: planName } },
         stdFee
       );
-      console.log("res from pay", response);
       toast.success("PAID SUCCESSFULLY" + response.transactionHash);
     } catch (err) {
-      console.log("ERROR", err)
       const error = err?.message;
       switch (true) {
         case (error.includes("exist")):
@@ -289,14 +307,12 @@ const Landing = () => {
           { "buy_tokens": { amount_to_buy: amount.toString() } },
           stdFee
         );
-        console.log("Res from buy", response)
         toast.success("TOKENS BOUGHT SUCCESSFULLY");
       } else {
         toast.error("TRANSACTION FAILED: USER DOES NOT HAVE ENOUGH COINS TO SEND !");
       }
     } catch (err) {
       const error = err?.message;
-      console.log("err from buy", error)
       if (error.includes("rejected")) {
         toast.error("USER DENIED TRANSACTION");
       } else {
@@ -556,22 +572,24 @@ const Landing = () => {
           </Button>
         </Col>
       </Col>
-      <table>
-        <thead>
-          <tr>
-            <th>Wallet Address</th>
-            <th>Amount Received</th>
-          </tr>
-        </thead>
-        <tbody>
+      <TableContainer component={Paper}>
+      <Table sx={{ minWidth: 100 }} aria-label="customized table">
+        <TableHead>
+          <StyledTableRow>
+            <StyledTableCell>Wallet Address</StyledTableCell>
+            <StyledTableCell>Amount Received</StyledTableCell>
+          </StyledTableRow>
+        </TableHead>
+        <TableBody>
           {referralList && referralList.map(referral => (
-            <tr key={referral}>
-              <td>{referral.referral}</td>
-              <td>{referral['amount_paid']}</td>
-            </tr>
+            <StyledTableRow key={referral}>
+              <StyledTableCell>{referral.referral}</StyledTableCell>
+              <StyledTableCell>{referral['amount_paid']}</StyledTableCell>
+            </StyledTableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+        </Table>
+      </TableContainer>
     </Row>
   );
 };
