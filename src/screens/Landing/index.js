@@ -1,40 +1,30 @@
 import { React, useState, useEffect } from "react";
-import { Button } from "@mui/material";
 import {
   CosmWasmClient,
   SigningCosmWasmClient,
 } from "@cosmjs/cosmwasm-stargate";
 import { GasPrice } from "@cosmjs/stargate";
 import { Tendermint34Client } from "@cosmjs/tendermint-rpc";
-import { map } from "lodash";
-import { Col, Divider, Input, InputNumber, Row } from "antd";
+import { isEmpty, map, template } from "lodash";
+import { Col, Divider, Row } from "antd";
 
 import "./landing.css";
 import { TextField } from "@mui/material";
 import { FaucetClient } from "@cosmjs/faucet-client";
-import { connectWallet, suggestChain } from "../../utils/helper";
+import { suggestChain } from "../../utils/helper";
 
+import axios from "axios";
+import { Box, InputLabel, MenuItem, FormControl, Modal, Select, Table, TableBody, TableContainer, TableHead, TableRow, Button, Grid } from '@mui/material';
+import { ToastContainer, toast } from "react-toastify";
+import { styled } from '@mui/material/styles';
+import TableCell, { tableCellClasses } from '@mui/material/TableCell';
+import Paper from '@mui/material/Paper';
+import { useSelector } from "react-redux";
+
+import 'react-toastify/dist/ReactToastify.css';
 import CHAIN_LOGO from "../../assets/chain-logo.png";
 import WALLET from "../../assets/wallet.svg";
-
-import Box from '@mui/material/Box';
-import InputLabel from '@mui/material/InputLabel';
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
-import Select from '@mui/material/Select';
-import Modal from '@mui/material/Modal';
-import axios from "axios";
-import { ToastContainer, toast } from "react-toastify";
-import 'react-toastify/dist/ReactToastify.css';
-import { styled } from '@mui/material/styles';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell, { tableCellClasses } from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
-
+import { constants } from "../../utils/constants";
 
 const Landing = () => {
   const style = {
@@ -49,6 +39,19 @@ const Landing = () => {
     p: 4,
   };
 
+  
+  const walletAddress = useSelector(state => state.rootReducer.wallet.walletAddress)
+  console.log("wallet-", walletAddress)
+  const tempList = useSelector(state => state.rootReducer.wallet.referralList[0])
+  let referralList;
+  if(!isEmpty(tempList)){
+    referralList = tempList;
+  }else{
+    referralList = [];
+  }
+  console.log("REFERRAL", referralList)
+
+
   const StyledTableCell = styled(TableCell)(({ theme }) => ({
     [`&.${tableCellClasses.head}`]: {
       backgroundColor: theme.palette.common.black,
@@ -58,7 +61,7 @@ const Landing = () => {
       fontSize: 17,
     },
   }));
-  
+
   const StyledTableRow = styled(TableRow)(({ theme }) => ({
     '&:nth-of-type(odd)': {
       backgroundColor: theme.palette.action.hover,
@@ -78,20 +81,15 @@ const Landing = () => {
   const [planName, setPlanName] = useState("");
   const [faucetAddress, setFaucetAddress] = useState("");
   const [connected, setConnected] = useState(false);
-  const [account, setAccount] = useState("");
   const [accountBalance, setAccountBalance] = useState(defaultBalance);
-  let [amount, setAmount] = useState("");
   const [txLogs, addTxLogs] = useState([]);
-  const [referralList, setReferralList] = useState([]);
   const [open, setOpen] = useState(false);
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
-  const [isInitialized, setInitialized] = useState(false);
-
   useEffect(() => {
     initialize();
-  });
+  }, [walletAddress]);
 
   const defaultChainData = {
     chainName: "Calib",
@@ -126,21 +124,13 @@ const Landing = () => {
     }
   };
 
-  const mlmContractAddress =
-    "calib1nc5tatafv6eyq7llkr2gv50ff9e22mnf70qgjlv737ktmt4eswrq5cvy0v";
+  const { TOKEN_CONTRACT_ADDRESS, MLM_CONTRACT_ADDRESS, ADMIN } = constants;
 
-  const tokenContractAddress =
-    "calib14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9scdfxd2";
-
-  const admin = "calib1ays90mvzfr09fqgjet23mmpxvuvnnafpflj74k";
-
-  let cwClient, client, accounts, offlineSigner;
+  let cwClient, client, accounts, offlineSigner, amount, refList;
 
   const initialize = async () => {
     await window.keplr.enable(chainData.chainId);
     offlineSigner = window.getOfflineSigner(chainData.chainId);
-    accounts = await offlineSigner.getAccounts();
-    setAccount(accounts[0].address);
     const options = {
       gasprice: new GasPrice(10, "calib"),
     };
@@ -152,29 +142,37 @@ const Landing = () => {
       "http://localhost:26657",
     )
 
-    setInitialized(true);
+    // setInitialized(true);
   };
 
-  useEffect(() => {
-    setTimeout(
-      () => getReferralList(), 100
-    )
-  }, [isInitialized])
+  // useEffect(() => {
+  //   setTimeout(
+  //     () => getReferralList(), 2000
+  //   )
+  //   // refList = getReferralList();
+  // })
+
+  console.log("REFLIST", refList);
 
   const addTxLog = (txHash, status, fnName) => {
-    debugger
     txLogs.push({ txHash, status, fnName });
     addTxLogs(txLogs);
   };
 
-  const getReferralList = async () => {
-    await initialize();
-    const response = await client.queryContractSmart(mlmContractAddress, { "get_level_detail": { "address": account, "level_count": "1" } })
-    setReferralList(list => response[0]['referrals'])
-  }
+  // const getReferralList = async () => {
+  //   await initialize();
+  //   try {
+  //     const response = await client.queryContractSmart(MLM_CONTRACT_ADDRESS, { "get_level_detail": { "address": walletAddress, "level_count": "1" } })
+  //     if (response && !isEmpty(response)) {
+  //       setReferralList(list => response[0]['referrals'])
+  //     }
+  //   } catch (e) {
+  //     console.log("ERR", e)
+  //   }
+  // }
 
   const getCoinBalance = async () => {
-    const response = await axios.get(`http://localhost:1317/cosmos/bank/v1beta1/balances/${account}?pagination.limit=1000`);
+    const response = await axios.get(`http://localhost:1317/cosmos/bank/v1beta1/balances/${walletAddress}?pagination.limit=1000`);
     const balance = {
       'coinBalance': response.data.balances[0].amount,
       'tokenBalance': 0
@@ -185,7 +183,7 @@ const Landing = () => {
 
   const getTokenBalance = async () => {
     await initialize();
-    const result = await client.queryContractSmart(tokenContractAddress, { "balance": { "address": account } })
+    const result = await client.queryContractSmart(TOKEN_CONTRACT_ADDRESS, { "balance": { "address": walletAddress } })
     setAccountBalance(prev => ({ ...prev, 'tokenBalance': result.balance }))
   }
 
@@ -193,9 +191,9 @@ const Landing = () => {
     try {
       await initialize();
       debugger
-      const response = await client.queryContractSmart(tokenContractAddress, { "allowance": { "owner": account, "spender": mlmContractAddress } })
+      const response = await client.queryContractSmart(TOKEN_CONTRACT_ADDRESS, { "allowance": { "owner": walletAddress, "spender": MLM_CONTRACT_ADDRESS } })
       if (response.allowance === "0") {
-        const result = await cwClient.execute(accounts[0].address, tokenContractAddress, { "increase_allowance": { "spender": mlmContractAddress, "amount": "10000" } }, stdFee)
+        const result = await cwClient.execute(accounts[0].address, TOKEN_CONTRACT_ADDRESS, { "increase_allowance": { "spender": MLM_CONTRACT_ADDRESS, "amount": "10000" } }, stdFee)
         toast.success("APPROVED SUCCESSFULLY" + result.transactionHash);
       }
     } catch (err) {
@@ -212,8 +210,8 @@ const Landing = () => {
     try {
       await initialize();
       const response = await cwClient.execute(
-        accounts[0].address,
-        mlmContractAddress,
+        walletAddress,
+        MLM_CONTRACT_ADDRESS,
         { "add_referral": { referrer: referrer } },
         stdFee
       );
@@ -245,8 +243,8 @@ const Landing = () => {
     try {
       await initialize();
       const response = await cwClient.execute(
-        accounts[0].address,
-        mlmContractAddress,
+        walletAddress,
+        MLM_CONTRACT_ADDRESS,
         { "pay_referral": { plan_name: planName } },
         stdFee
       );
@@ -279,6 +277,7 @@ const Landing = () => {
 
   const buyTokens = async () => {
     let txHash;
+    debugger
     try {
       await initialize();
       amount = parseFloat(amount);
@@ -296,8 +295,8 @@ const Landing = () => {
       };
 
       const result = await cwClient.sendTokens(
-        accounts[0].address,
-        admin,
+        walletAddress,
+        ADMIN,
         [amountFinal],
         stdFee,
         ""
@@ -309,8 +308,8 @@ const Landing = () => {
         toast.success("SUCCESSFULLY SENT CALIB COINS");
 
         const response = await cwClient.execute(
-          accounts[0].address,
-          mlmContractAddress,
+          walletAddress,
+          MLM_CONTRACT_ADDRESS,
           { "buy_tokens": { amount_to_buy: amount.toString() } },
           stdFee
         );
@@ -357,7 +356,7 @@ const Landing = () => {
   };
 
   const handeleAmountChange = (event) => {
-    setAmount(event.target.value);
+    amount = event.target.value;
   };
 
   const inputs = [
@@ -400,117 +399,163 @@ const Landing = () => {
   ];
 
   return (
-    <Row>
+    <div className="flex-and-c">
       <ToastContainer />
-      <Col lg={{ span: 8 }} className="p-5">
-        <Col className="border-radius chain-details">
-          <div className="mb-3">
-            <h2 className="text-black">Add referral</h2>
-            <div>
-              <TextField
-                required
-                id="outlined-text-input"
-                label={"Referrer address"}
-                type="text"
-                className="mt-3 me-3 w-100"
-                onChange={(e) => handeleReferrerChange(e)}
-              />
+      <Grid container>
+
+        <Grid item xs="12" md="6" lg="4" className="p-5">
+          <div className="border-radius chain-details">
+            <div className="mb-3">
+              <h2 className="text-black">Add referral</h2>
+              <div>
+                <TextField
+                  required
+                  id="outlined-text-input"
+                  label={"Referrer address"}
+                  type="text"
+                  className="mt-3 me-3 w-100"
+                  onChange={(e) => handeleReferrerChange(e)}
+                />
+              </div>
+              <Button
+                variant="contained"
+                onClick={addReferrer}
+                className="mt-4 w-100 border-radius connect-btn "
+              >
+                <h6 className="p-2">Add referral</h6>
+              </Button>
             </div>
-            <Button
-              variant="contained"
-              onClick={addReferrer}
-              className="mt-4 w-100 border-radius connect-btn "
-            >
-              <h6 className="p-2">Add referral</h6>
-            </Button>
+            <div className="mb-3">
+              <h2 className="text-black mb-3">Pay referral</h2>
+              <Box sx={{ minWidth: 120 }}>
+                <FormControl fullWidth>
+                  <InputLabel id="select-label">Plan</InputLabel>
+                  <Select
+                    value={planName}
+                    label="Plan"
+                    onChange={handlePlanchange}
+                  >
+                    <MenuItem value="basic">Basic</MenuItem>
+                    <MenuItem value="standard">Standard</MenuItem>
+                    <MenuItem value="premium">Premium</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
+              <Button
+                variant="contained"
+                onClick={payReferrer}
+                className="mt-3 w-100 border-radius connect-btn "
+              >
+                <h6 className="p-2">Pay now</h6>
+              </Button>
+            </div>
           </div>
-          <div className="mb-3">
-            <h2 className="text-black mb-3">Pay referral</h2>
-            <Box sx={{ minWidth: 120 }}>
-              <FormControl fullWidth>
-                <InputLabel id="select-label">Plan</InputLabel>
-                <Select
-                  value={planName}
-                  label="Plan"
-                  onChange={handlePlanchange}
-                >
-                  <MenuItem value="basic">Basic</MenuItem>
-                  <MenuItem value="standard">Standard</MenuItem>
-                  <MenuItem value="premium">Premium</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-            <Button
-              variant="contained"
-              onClick={payReferrer}
-              className="mt-3 w-100 border-radius connect-btn "
-            >
-              <h6 className="p-2">Pay now</h6>
-            </Button>
-          </div>
-        </Col>
-      </Col>
-      <Col lg={{ span: 8 }} className="p-5">
-        <Col className="border-radius chain-details mb-5">
-          <h2 className="text-black mb-3">User details</h2>
-          <Row className="mb-3">
+        </Grid>
+
+        <Grid item xs="12" md="6" lg="4" className="p-5">
+          <Grid className="border-radius chain-details mb-5">
+            <h2 className="text-black mb-3">User details</h2>
+            <Grid className="mb-3">
+              <Grid span={4} className="d-flex ">
+                <div className="chain-logo">
+                  <img
+                    height="100%"
+                    width="100%"
+                    className="object-fit-contain"
+                    src={CHAIN_LOGO}
+                    alt="chain-logo"
+                  />
+                </div>
+                <Grid span={20} className="ms-2">
+                  <h3 className="text-black">Wallet Address</h3>
+                  <h5 className="address">
+                    {walletAddress}
+                  </h5>
+                </Grid>
+              </Grid>
+            </Grid>
+            <Divider></Divider>
             <Row span={4} className="d-flex ">
               <div className="chain-logo">
                 <img
                   height="100%"
                   width="100%"
                   className="object-fit-contain"
-                  src={CHAIN_LOGO}
+                  src={WALLET}
                   alt="chain-logo"
                 />
               </div>
-              <Col span={20} className="ms-2">
-                <h3 className="text-black">Wallet Address</h3>
-                <h5 className="address">
-                  {account}
-                </h5>
-              </Col>
-            </Row>
-          </Row>
-          <Divider></Divider>
-          <Row span={4} className="d-flex ">
-            <div className="chain-logo">
-              <img
-                height="100%"
-                width="100%"
-                className="object-fit-contain"
-                src={WALLET}
-                alt="chain-logo"
-              />
-            </div>
-            <Col span={20} className="ms-3 mb-3">
-              <div className="d-flex mb-2">
-                <h5 className="text-black ">Coin balance :</h5>
-                <h5 className="coins ms-3">{accountBalance.coinBalance} coins</h5>
+              <Col span={20} className="ms-3 mb-3">
+                <div className="d-flex mb-2">
+                  <h5 className="text-black ">Coin balance :</h5>
+                  <h5 className="coins ms-3">{accountBalance.coinBalance} coins</h5>
 
-              </div>
-              <div className="d-flex align-items-center mb-2">
-                <h5 className="text-black">Token balance :</h5>
-                <h5 className="tokens ms-3">{accountBalance.tokenBalance} tokens</h5>
-              </div>
-            </Col>
+                </div>
+                <div className="d-flex align-items-center mb-2">
+                  <h5 className="text-black">Token balance :</h5>
+                  <h5 className="tokens ms-3">{accountBalance.tokenBalance} tokens</h5>
+                </div>
+              </Col>
+              <Button
+                variant="contained"
+                className="w-50 mb-2"
+                onClick={getCoinBalance}
+              >
+                check balance
+              </Button>
+              <Button
+                variant="contained"
+                className="w-50 mb-2"
+                onClick={handleOpen}
+              >
+                Get more tokens
+              </Button>
+            </Row>
+          </Grid>
+        </Grid>
+
+        <Grid item xs="12" md="6" lg="4" className="p-5">
+          <Grid lg={{ span: 24 }} className="chain-details border-radius">
+            <h2 className="text-black">Network configuration</h2>
+            <div className="flex-and-between">
+              {map(inputs, (input, i) => (
+                <TextField
+                  key={i}
+                  id="outlined-text-input"
+                  label={input.name}
+                  type="text"
+                  className="mt-3"
+                  onChange={(e) => handleOnchange(input.key, e)}
+                  defaultValue={defaultChainData[input.key]}
+                />
+              ))}
+              <Button
+                variant="contained"
+                onClick={addNetwork}
+                className="mt-4 w-100 border-radius connect-btn "
+              >
+                <h6 className="p-2">{connected ? "Connected" : "Connect"} </h6>
+              </Button>
+            </div>
+            <h2 className="text-black mt-3">Faucet</h2>
+            <TextField
+              id="outlined-text-input"
+              label={"Address"}
+              type="text"
+              onChange={handleFaucetAddress}
+              className="mt-3 w-100"
+            />
             <Button
               variant="contained"
-              className="w-50 mb-2"
-              onClick={getCoinBalance}
+              onClick={getCalib}
+              className="mt-4 w-100 border-radius connect-btn "
             >
-              check balance
+              <h6 className="p-2">Hit Faucet</h6>
             </Button>
-            <Button
-              variant="contained"
-              className="w-50 mb-2"
-              onClick={handleOpen}
-            >
-              Get more tokens
-            </Button>
-          </Row>
-        </Col>
-      </Col>
+          </Grid>
+        </Grid>
+      </Grid>
+
       <Modal
         open={open}
         onClose={handleClose}
@@ -541,65 +586,26 @@ const Landing = () => {
           <Button onClick={handleClose}>close</Button>
         </Box>
       </Modal>
-      <Col lg={{ span: 8 }} className="p-5">
-        <Col lg={{ span: 24 }} className="chain-details border-radius">
-          <h2 className="text-black">Network configuration</h2>
-          <div className="flex-and-between">
-            {map(inputs, (input, i) => (
-              <TextField
-                key={i}
-                id="outlined-text-input"
-                label={input.name}
-                type="text"
-                className="mt-3"
-                onChange={(e) => handleOnchange(input.key, e)}
-                defaultValue={defaultChainData[input.key]}
-              />
-            ))}
-            <Button
-              variant="contained"
-              onClick={addNetwork}
-              className="mt-4 w-100 border-radius connect-btn "
-            >
-              <h6 className="p-2">{connected ? "Connected" : "Connect"} </h6>
-            </Button>
-          </div>
-          <h2 className="text-black mt-3">Faucet</h2>
-          <TextField
-            id="outlined-text-input"
-            label={"Address"}
-            type="text"
-            onChange={handleFaucetAddress}
-            className="mt-3 w-100"
-          />
-          <Button
-            variant="contained"
-            onClick={getCalib}
-            className="mt-4 w-100 border-radius connect-btn "
-          >
-            <h6 className="p-2">Hit Faucet</h6>
-          </Button>
-        </Col>
-      </Col>
-      <TableContainer component={Paper}>
-      <Table sx={{ minWidth: 100 }} aria-label="customized table">
-        <TableHead>
-          <StyledTableRow>
-            <StyledTableCell>Wallet Address</StyledTableCell>
-            <StyledTableCell>Amount Received</StyledTableCell>
-          </StyledTableRow>
-        </TableHead>
-        <TableBody>
-          {referralList && referralList.map(referral => (
-            <StyledTableRow key={referral}>
-              <StyledTableCell>{referral.referral}</StyledTableCell>
-              <StyledTableCell>{referral['amount_paid']}</StyledTableCell>
+
+      {/* <TableContainer component={Paper}>
+        <Table sx={{ minWidth: 100 }} aria-label="customized table">
+          <TableHead>
+            <StyledTableRow>
+              <StyledTableCell>Wallet Address</StyledTableCell>
+              <StyledTableCell>Amount Received</StyledTableCell>
             </StyledTableRow>
-          ))}
-        </TableBody>
+          </TableHead>
+          <TableBody>
+            {referralList.map((referral, i) => (
+              <StyledTableRow key={i}>
+                <StyledTableCell>{referral.referral}</StyledTableCell>
+                <StyledTableCell>{referral['amount_paid']}</StyledTableCell>
+              </StyledTableRow>
+            ))}
+          </TableBody>
         </Table>
-      </TableContainer>
-    </Row>
+      </TableContainer> */}
+    </div>
   );
 };
 export default Landing;

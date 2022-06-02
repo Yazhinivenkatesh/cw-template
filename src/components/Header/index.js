@@ -1,18 +1,28 @@
-import { Button } from "antd";
 import { WalletOutlined } from "@ant-design/icons";
+import { connectWallet, getReferralList } from "../../utils/helper";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { saveWalletAddress, saveReferralDetail } from "../../redux/Wallet/actions";
 import "./header.css";
-import { connectWallet } from "../../utils/helper";
-import { useEffect, useState } from "react";
 
 const Header = () => {
-  const [account, setAccount] = useState(null);
-  
-  window.onload = async () => {
+  const dispatch = useDispatch();
+  const walletAddress = useSelector(state => state.rootReducer.wallet.walletAddress)
+  useEffect(() => {
+    (async () => {
+      await updateWallet()
+    })()
+  }, [])
+
+  const updateWallet = async () => {
+    debugger
     const response = await connectWallet();
     if (response != null) {
-      setAccount((account) => response);
+      dispatch(saveWalletAddress(response.address));
+      const referralList = await getReferralList();
+      dispatch(saveReferralDetail(referralList));
     }
-  };
+  }
 
   return (
     <div className="bg header flex-and-between">
@@ -22,10 +32,10 @@ const Header = () => {
       <button
         title="Connect wallet"
         className="border-radius flex-and-between border-0 wallet-btn"
-        onClick={connectWallet}
+        onClick={updateWallet}
       >
         <WalletOutlined className="ms-2 mb-1 wallet-icon" />
-        <h4 className="wallet-address ms-2 mb-1">{account !== null ? account.address : "Connect Wallet"}</h4>
+        <h4 className="wallet-address ms-2 mb-1">{walletAddress !== null ? walletAddress : "Connect Wallet"}</h4>
       </button>
     </div>
   );

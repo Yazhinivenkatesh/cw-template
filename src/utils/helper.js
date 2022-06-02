@@ -1,19 +1,16 @@
-import { Tendermint34Client } from "@cosmjs/tendermint-rpc";
-import { coin } from "@cosmjs/proto-signing";
-
 import { fromMicroDenom } from "./coins.ts";
+import {
+  CosmWasmClient,
+  SigningCosmWasmClient,
+} from "@cosmjs/cosmwasm-stargate";
+import { GasPrice } from "@cosmjs/stargate";
+import { Tendermint34Client } from "@cosmjs/tendermint-rpc";
+import { isEmpty } from "lodash";
+import { useSelector } from "react-redux";
+import { constants } from "./constants";
 const chainId = "calibchain";
-const stdFee = {
-  amount: [
-    {
-      denom: "calib",
-      amount: "222500",
-    },
-  ],
-  gas: "80000000",
-};
 
-let accounts, offlineSigner;
+let accounts, offlineSigner, client, cwClient;
 
 export const suggestChain = async (config) => {
   const keplr = window.keplr;
@@ -87,7 +84,7 @@ export const connectWallet = async () => {
     offlineSigner = window.keplr.getOfflineSigner(chainId);
     accounts = await offlineSigner.getAccounts();
 
-    console.log(accounts);
+    console.log("accounts",accounts);
     if (accounts !== undefined) {
       localStorage.setItem("account", JSON.stringify(accounts[0]));
     }
@@ -99,3 +96,34 @@ export const connectWallet = async () => {
     console.log("Error connecting wallet!", error);
   }
 };
+
+
+export const initialize = async () => {
+  await window.keplr.enable(chainId);
+  offlineSigner = window.getOfflineSigner(chainId);
+  const options = {
+    gasprice: new GasPrice(10, "calib"),
+  };
+  const tmClient = await Tendermint34Client.connect("http://localhost:26657");
+
+  cwClient = new SigningCosmWasmClient(tmClient, offlineSigner, options);
+
+  client = await CosmWasmClient.connect(
+    "http://localhost:26657",
+  )
+};
+
+export const getReferralList = async () => {
+  debugger
+  await initialize();
+  try {
+    let referralList = [];
+    const response = await client.queryContractSmart(constants.MLM_CONTRACT_ADDRESS, { "get_level_detail": { "address": accounts[0].address, "level_count": "1" } })
+    if (response && !isEmpty(response)) {
+      referralList.push(response[0]['referrals'])
+    }
+    return referralList;
+  } catch (err) {
+    console.log("ERR", err)
+  }
+}
