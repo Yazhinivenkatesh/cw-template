@@ -26,7 +26,7 @@ const Header = () => {
   return (
     <div className="bg header flex-and-between">
       <div>
-        <h2>Calib console</h2>
+        <h2 className="primary brand-name">Calib console</h2>
       </div>
       <button
         title="Connect wallet"

@@ -5,7 +5,7 @@
   padding: 18px;
   font-weight: bold;
   color: white;
-  background-color: rgb(1, 4, 16);
+  background-color: white;
 }
 
 .wallet-btn {
@@ -19,12 +19,12 @@
 
 .wallet-icon {
   font-size: 24px;
-  color: #08c;
+  color: #ff8925;
 }
 
 .wallet-address {
-  max-width: 150px;
-  font-size: small !important;
+  max-width: 190px;
+  font-size: larger !important;
   font-weight: bold !important;
   font-stretch: normal !important;
   font-style: normal !important;
@@ -34,4 +34,10 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.brand-name {
+  font-weight: bold;
+  color: #ff8925;
+  cursor: pointer;
 }

@@ -1,10 +1,12 @@
 .bg {
-  background-color: rgb(1, 4, 16);
+  /* background-color:#090014; */
+  background-color: black;
 }
 
 .chain-details {
-  border: 1px solid rgb(4, 4, 15);
+  border: 1px solid #ff8925;
   padding: 12px;
+  /* max-height: 400px; */
 }
 
 .key {
@@ -12,11 +14,8 @@
   color: rgb(39, 0, 125);
 }
 
-.value {
-}
-
 .connect-btn {
-  background-color: rebeccapurple;
+  background-color: rebecca#ff8925;
   color: white;
   height: auto;
 }
@@ -26,19 +25,24 @@
 }
 
 .address {
-  color: rebeccapurple;
+  color: #ff8925;
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
   cursor: pointer;
+  font-weight: bold
 }
 
 .coins {
-  color: rebeccapurple;
+  color: #ff8925;
   font-weight: bold;
 }
 
 .tokens {
-  color: tomato;
+  color: #ff8925;
   font-weight: bold;
+}
+
+.btn {
+  background-color: #ff8925 !important;
 }

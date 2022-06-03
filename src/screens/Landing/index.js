@@ -5,7 +5,7 @@ import {
 } from "@cosmjs/cosmwasm-stargate";
 import { GasPrice } from "@cosmjs/stargate";
 import { Tendermint34Client } from "@cosmjs/tendermint-rpc";
-import { isEmpty, map, template } from "lodash";
+import { isEmpty, map } from "lodash";
 import { Col, Divider, Row } from "antd";
 
 import "./landing.css";
@@ -43,10 +43,10 @@ const Landing = () => {
 
   const walletAddress = useSelector(state => state.rootReducer.wallet.walletAddress)
   const tempRefList = useSelector(state => state.rootReducer.wallet.referralList[0])
-  
-  if(!isEmpty(tempRefList)){
+
+  if (!isEmpty(tempRefList)) {
     referralList = tempRefList;
-  }else{
+  } else {
     referralList = [];
   }
 
@@ -87,7 +87,7 @@ const Landing = () => {
 
   useEffect(() => {
     initialize();
-  },[walletAddress]);
+  }, [walletAddress]);
 
   const defaultChainData = {
     chainName: "Calib",
@@ -370,61 +370,12 @@ const Landing = () => {
   ];
 
   return (
-    <div className="flex-and-c">
+    <div className="flex-and-center landing">
       <ToastContainer />
-      <Grid container>
+      <Grid container className="m-5">
+        <Grid xs="12" md="6" lg="4" >
 
-        <Grid item xs="12" md="6" lg="4" className="p-5">
-          <div className="border-radius chain-details">
-            <div className="mb-3">
-              <h2 className="text-black">Add referral</h2>
-              <div>
-                <TextField
-                  required
-                  id="outlined-text-input"
-                  label={"Referrer address"}
-                  type="text"
-                  className="mt-3 me-3 w-100"
-                  onChange={(e) => handeleReferrerChange(e)}
-                />
-              </div>
-              <Button
-                variant="contained"
-                onClick={addReferrer}
-                className="mt-4 w-100 border-radius connect-btn "
-              >
-                <h6 className="p-2">Add referral</h6>
-              </Button>
-            </div>
-            <div className="mb-3">
-              <h2 className="text-black mb-3">Pay referral</h2>
-              <Box sx={{ minWidth: 120 }}>
-                <FormControl fullWidth>
-                  <InputLabel id="select-label">Plan</InputLabel>
-                  <Select
-                    value={planName}
-                    label="Plan"
-                    onChange={handlePlanchange}
-                  >
-                    <MenuItem value="basic">Basic</MenuItem>
-                    <MenuItem value="standard">Standard</MenuItem>
-                    <MenuItem value="premium">Premium</MenuItem>
-                  </Select>
-                </FormControl>
-              </Box>
-              <Button
-                variant="contained"
-                onClick={payReferrer}
-                className="mt-3 w-100 border-radius connect-btn "
-              >
-                <h6 className="p-2">Pay now</h6>
-              </Button>
-            </div>
-          </div>
-        </Grid>
-
-        <Grid item xs="12" md="6" lg="4" className="p-5">
-          <Grid className="border-radius chain-details mb-5">
+          <Grid className="border-radius chain-details p-5">
             <h2 className="text-black mb-3">User details</h2>
             <Grid className="mb-3">
               <Grid span={4} className="d-flex ">
@@ -458,34 +409,82 @@ const Landing = () => {
               </div>
               <Col span={20} className="ms-3 mb-3">
                 <div className="d-flex mb-2">
-                  <h5 className="text-black ">Coin balance :</h5>
+                  <h5 className="text-black"><b>Coin balance :</b></h5>
                   <h5 className="coins ms-3">{accountBalance.coinBalance} coins</h5>
-
                 </div>
                 <div className="d-flex align-items-center mb-2">
-                  <h5 className="text-black">Token balance :</h5>
+                  <h5 className="text-black"><b>Token balance :</b></h5>
                   <h5 className="tokens ms-3">{accountBalance.tokenBalance} tokens</h5>
                 </div>
               </Col>
               <Button
                 variant="contained"
-                className="w-50 mb-2"
+                className="w-50 mb-2 btn"
                 onClick={getCoinBalance}
               >
                 check balance
               </Button>
               <Button
                 variant="contained"
-                className="w-50 mb-2"
+                className="w-50 mb-2 btn"
                 onClick={handleOpen}
               >
                 Get more tokens
               </Button>
             </Row>
           </Grid>
+
+          <Grid className="p-5">
+            <div className="border-radius chain-details">
+              <div className="mb-3">
+                <h2 className="text-black">Add referral</h2>
+                <div>
+                  <TextField
+                    required
+                    id="outlined-text-input"
+                    label={"Referrer address"}
+                    type="text"
+                    className="mt-3 me-3 w-100"
+                    onChange={(e) => handeleReferrerChange(e)}
+                  />
+                </div>
+                <Button
+                  variant="contained"
+                  onClick={addReferrer}
+                  className="mt-4 w-100 border-radius connect-btn btn"
+                >
+                  <h6 className="p-2">Add referral</h6>
+                </Button>
+              </div>
+              <div className="mb-3">
+                <h2 className="text-black mb-3">Pay referral</h2>
+                <Box sx={{ minWidth: 120 }}>
+                  <FormControl fullWidth>
+                    <InputLabel id="select-label">Plan</InputLabel>
+                    <Select
+                      value={planName}
+                      label="Plan"
+                      onChange={handlePlanchange}
+                    >
+                      <MenuItem value="basic">Basic</MenuItem>
+                      <MenuItem value="standard">Standard</MenuItem>
+                      <MenuItem value="premium">Premium</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+                <Button
+                  variant="contained"
+                  onClick={payReferrer}
+                  className="mt-4 w-100 border-radius connect-btn btn"
+                >
+                  <h6 className="p-2">Pay now</h6>
+                </Button>
+              </div>
+            </div>
+          </Grid>
         </Grid>
 
-        <Grid item xs="12" md="6" lg="4" className="p-5">
+        <Grid xs="12" md="6" lg="4" className="p-5">
           <Grid lg={{ span: 24 }} className="chain-details border-radius">
             <h2 className="text-black">Network configuration</h2>
             <div className="flex-and-between">
@@ -503,26 +502,11 @@ const Landing = () => {
               <Button
                 variant="contained"
                 onClick={addNetwork}
-                className="mt-4 w-100 border-radius connect-btn "
+                className="mt-4 w-100 border-radius connect-btn btn"
               >
                 <h6 className="p-2">{connected ? "Connected" : "Connect"} </h6>
               </Button>
             </div>
-            <h2 className="text-black mt-3">Faucet</h2>
-            <TextField
-              id="outlined-text-input"
-              label={"Address"}
-              type="text"
-              onChange={handleFaucetAddress}
-              className="mt-3 w-100"
-            />
-            <Button
-              variant="contained"
-              onClick={getCalib}
-              className="mt-4 w-100 border-radius connect-btn "
-            >
-              <h6 className="p-2">Hit Faucet</h6>
-            </Button>
           </Grid>
         </Grid>
       </Grid>
@@ -549,7 +533,7 @@ const Landing = () => {
             <Button
               variant="contained"
               onClick={buyTokens}
-              className="mt-4 w-100 border-radius connect-btn "
+              className="mt-4 w-100 border-radius connect-btn btn"
             >
               <h6 className="p-2">Buy Now</h6>
             </Button>
@@ -557,7 +541,6 @@ const Landing = () => {
           <Button onClick={handleClose}>close</Button>
         </Box>
       </Modal>
-
       <TableContainer component={Paper}>
         <Table sx={{ minWidth: 100 }} aria-label="customized table">
           <TableHead>

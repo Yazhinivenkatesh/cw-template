@@ -64,3 +64,7 @@ h6 {
 .object-fit-contain {
   object-fit: contain;
 }
+
+.primary {
+  color: #ff8925;
+}
