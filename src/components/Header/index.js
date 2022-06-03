@@ -12,10 +12,9 @@ const Header = () => {
     (async () => {
       await updateWallet()
     })()
-  }, [])
+  })
 
   const updateWallet = async () => {
-    debugger
     const response = await connectWallet();
     if (response != null) {
       dispatch(saveWalletAddress(response.address));

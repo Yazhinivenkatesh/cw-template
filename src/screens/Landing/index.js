@@ -39,18 +39,16 @@ const Landing = () => {
     p: 4,
   };
 
-  
+  let cwClient, client, accounts, offlineSigner, amount, referralList;
+
   const walletAddress = useSelector(state => state.rootReducer.wallet.walletAddress)
-  console.log("wallet-", walletAddress)
-  const tempList = useSelector(state => state.rootReducer.wallet.referralList[0])
-  let referralList;
-  if(!isEmpty(tempList)){
-    referralList = tempList;
+  const tempRefList = useSelector(state => state.rootReducer.wallet.referralList[0])
+  
+  if(!isEmpty(tempRefList)){
+    referralList = tempRefList;
   }else{
     referralList = [];
   }
-  console.log("REFERRAL", referralList)
-
 
   const StyledTableCell = styled(TableCell)(({ theme }) => ({
     [`&.${tableCellClasses.head}`]: {
@@ -89,7 +87,7 @@ const Landing = () => {
 
   useEffect(() => {
     initialize();
-  }, [walletAddress]);
+  },[walletAddress]);
 
   const defaultChainData = {
     chainName: "Calib",
@@ -126,8 +124,6 @@ const Landing = () => {
 
   const { TOKEN_CONTRACT_ADDRESS, MLM_CONTRACT_ADDRESS, ADMIN } = constants;
 
-  let cwClient, client, accounts, offlineSigner, amount, refList;
-
   const initialize = async () => {
     await window.keplr.enable(chainData.chainId);
     offlineSigner = window.getOfflineSigner(chainData.chainId);
@@ -141,35 +137,12 @@ const Landing = () => {
     client = await CosmWasmClient.connect(
       "http://localhost:26657",
     )
-
-    // setInitialized(true);
   };
-
-  // useEffect(() => {
-  //   setTimeout(
-  //     () => getReferralList(), 2000
-  //   )
-  //   // refList = getReferralList();
-  // })
-
-  console.log("REFLIST", refList);
 
   const addTxLog = (txHash, status, fnName) => {
     txLogs.push({ txHash, status, fnName });
     addTxLogs(txLogs);
   };
-
-  // const getReferralList = async () => {
-  //   await initialize();
-  //   try {
-  //     const response = await client.queryContractSmart(MLM_CONTRACT_ADDRESS, { "get_level_detail": { "address": walletAddress, "level_count": "1" } })
-  //     if (response && !isEmpty(response)) {
-  //       setReferralList(list => response[0]['referrals'])
-  //     }
-  //   } catch (e) {
-  //     console.log("ERR", e)
-  //   }
-  // }
 
   const getCoinBalance = async () => {
     const response = await axios.get(`http://localhost:1317/cosmos/bank/v1beta1/balances/${walletAddress}?pagination.limit=1000`);
@@ -190,7 +163,6 @@ const Landing = () => {
   const allowance = async () => {
     try {
       await initialize();
-      debugger
       const response = await client.queryContractSmart(TOKEN_CONTRACT_ADDRESS, { "allowance": { "owner": walletAddress, "spender": MLM_CONTRACT_ADDRESS } })
       if (response.allowance === "0") {
         const result = await cwClient.execute(accounts[0].address, TOKEN_CONTRACT_ADDRESS, { "increase_allowance": { "spender": MLM_CONTRACT_ADDRESS, "amount": "10000" } }, stdFee)
@@ -277,7 +249,6 @@ const Landing = () => {
 
   const buyTokens = async () => {
     let txHash;
-    debugger
     try {
       await initialize();
       amount = parseFloat(amount);
@@ -587,7 +558,7 @@ const Landing = () => {
         </Box>
       </Modal>
 
-      {/* <TableContainer component={Paper}>
+      <TableContainer component={Paper}>
         <Table sx={{ minWidth: 100 }} aria-label="customized table">
           <TableHead>
             <StyledTableRow>
@@ -598,13 +569,13 @@ const Landing = () => {
           <TableBody>
             {referralList.map((referral, i) => (
               <StyledTableRow key={i}>
-                <StyledTableCell>{referral.referral}</StyledTableCell>
+                <StyledTableCell>{referral['referral']}</StyledTableCell>
                 <StyledTableCell>{referral['amount_paid']}</StyledTableCell>
               </StyledTableRow>
             ))}
           </TableBody>
         </Table>
-      </TableContainer> */}
+      </TableContainer>
     </div>
   );
 };

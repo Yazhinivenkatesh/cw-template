@@ -6,7 +6,6 @@ import {
 import { GasPrice } from "@cosmjs/stargate";
 import { Tendermint34Client } from "@cosmjs/tendermint-rpc";
 import { isEmpty } from "lodash";
-import { useSelector } from "react-redux";
 import { constants } from "./constants";
 const chainId = "calibchain";
 
@@ -83,12 +82,9 @@ export const connectWallet = async () => {
     await window.keplr.enable(chainId);
     offlineSigner = window.keplr.getOfflineSigner(chainId);
     accounts = await offlineSigner.getAccounts();
-
-    console.log("accounts",accounts);
-    if (accounts !== undefined) {
-      localStorage.setItem("account", JSON.stringify(accounts[0]));
-    }
-
+    // if (accounts !== undefined) {
+    //   localStorage.setItem("account", JSON.stringify(accounts[0]));
+    // }
     return {
       address: accounts[0].address,
     };
@@ -114,9 +110,8 @@ export const initialize = async () => {
 };
 
 export const getReferralList = async () => {
-  debugger
-  await initialize();
   try {
+    await initialize();
     let referralList = [];
     const response = await client.queryContractSmart(constants.MLM_CONTRACT_ADDRESS, { "get_level_detail": { "address": accounts[0].address, "level_count": "1" } })
     if (response && !isEmpty(response)) {
