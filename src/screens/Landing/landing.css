@@ -21,7 +21,8 @@
 }
 
 .chain-logo {
-  height: 50px;
+  max-height: 50px;
+  max-width: 80px;
 }
 
 .address {
@@ -45,4 +46,8 @@
 
 .btn {
   background-color: #ff8925 !important;
+}
+
+.primary {
+  color: #ff8925 !important
 }

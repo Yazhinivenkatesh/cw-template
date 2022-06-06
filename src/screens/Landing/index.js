@@ -6,7 +6,7 @@ import {
 import { GasPrice } from "@cosmjs/stargate";
 import { Tendermint34Client } from "@cosmjs/tendermint-rpc";
 import { isEmpty, map } from "lodash";
-import { Col, Divider, Row } from "antd";
+import { Table } from "antd";
 
 import "./landing.css";
 import { TextField } from "@mui/material";
@@ -14,35 +14,46 @@ import { FaucetClient } from "@cosmjs/faucet-client";
 import { suggestChain } from "../../utils/helper";
 
 import axios from "axios";
-import { Box, InputLabel, MenuItem, FormControl, Modal, Select, Table, TableBody, TableContainer, TableHead, TableRow, Button, Grid } from '@mui/material';
+import {
+  Box,
+  InputLabel,
+  MenuItem,
+  FormControl,
+  Modal,
+  Select,
+  TableRow,
+  Button,
+} from "@mui/material";
 import { ToastContainer, toast } from "react-toastify";
-import { styled } from '@mui/material/styles';
-import TableCell, { tableCellClasses } from '@mui/material/TableCell';
-import Paper from '@mui/material/Paper';
+import { styled } from "@mui/material/styles";
+import TableCell, { tableCellClasses } from "@mui/material/TableCell";
 import { useSelector } from "react-redux";
 
-import 'react-toastify/dist/ReactToastify.css';
-import CHAIN_LOGO from "../../assets/chain-logo.png";
+import "react-toastify/dist/ReactToastify.css";
 import WALLET from "../../assets/wallet.svg";
 import { constants } from "../../utils/constants";
 
 const Landing = () => {
   const style = {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
     width: 600,
-    bgcolor: 'background.paper',
-    border: '2px solid #000',
+    bgcolor: "background.paper",
+    border: "2px solid #000",
     boxShadow: 50,
     p: 4,
   };
 
   let cwClient, client, accounts, offlineSigner, amount, referralList;
 
-  const walletAddress = useSelector(state => state.rootReducer.wallet.walletAddress)
-  const tempRefList = useSelector(state => state.rootReducer.wallet.referralList[0])
+  const walletAddress = useSelector(
+    (state) => state.rootReducer.wallet.walletAddress
+  );
+  const tempRefList = useSelector(
+    (state) => state.rootReducer.wallet.referralList[0]
+  );
 
   if (!isEmpty(tempRefList)) {
     referralList = tempRefList;
@@ -61,11 +72,11 @@ const Landing = () => {
   }));
 
   const StyledTableRow = styled(TableRow)(({ theme }) => ({
-    '&:nth-of-type(odd)': {
+    "&:nth-of-type(odd)": {
       backgroundColor: theme.palette.action.hover,
     },
     // hide last border
-    '&:last-child td, &:last-child th': {
+    "&:last-child td, &:last-child th": {
       border: 0,
     },
   }));
@@ -134,9 +145,7 @@ const Landing = () => {
 
     cwClient = new SigningCosmWasmClient(tmClient, offlineSigner, options);
 
-    client = await CosmWasmClient.connect(
-      "http://localhost:26657",
-    )
+    client = await CosmWasmClient.connect("http://localhost:26657");
   };
 
   const addTxLog = (txHash, status, fnName) => {
@@ -145,35 +154,51 @@ const Landing = () => {
   };
 
   const getCoinBalance = async () => {
-    const response = await axios.get(`http://localhost:1317/cosmos/bank/v1beta1/balances/${walletAddress}?pagination.limit=1000`);
+    const response = await axios.get(
+      `http://localhost:1317/cosmos/bank/v1beta1/balances/${walletAddress}?pagination.limit=1000`
+    );
     const balance = {
-      'coinBalance': response.data.balances[0].amount,
-      'tokenBalance': 0
-    }
+      coinBalance: response.data.balances[0].amount,
+      tokenBalance: 0,
+    };
     setAccountBalance(balance);
     await getTokenBalance();
-  }
+  };
 
   const getTokenBalance = async () => {
     await initialize();
-    const result = await client.queryContractSmart(TOKEN_CONTRACT_ADDRESS, { "balance": { "address": walletAddress } })
-    setAccountBalance(prev => ({ ...prev, 'tokenBalance': result.balance }))
-  }
+    const result = await client.queryContractSmart(TOKEN_CONTRACT_ADDRESS, {
+      balance: { address: walletAddress },
+    });
+    setAccountBalance((prev) => ({ ...prev, tokenBalance: result.balance }));
+  };
 
   const allowance = async () => {
     try {
       await initialize();
-      const response = await client.queryContractSmart(TOKEN_CONTRACT_ADDRESS, { "allowance": { "owner": walletAddress, "spender": MLM_CONTRACT_ADDRESS } })
+      const response = await client.queryContractSmart(TOKEN_CONTRACT_ADDRESS, {
+        allowance: { owner: walletAddress, spender: MLM_CONTRACT_ADDRESS },
+      });
       if (response.allowance === "0") {
-        const result = await cwClient.execute(accounts[0].address, TOKEN_CONTRACT_ADDRESS, { "increase_allowance": { "spender": MLM_CONTRACT_ADDRESS, "amount": "10000" } }, stdFee)
+        const result = await cwClient.execute(
+          accounts[0].address,
+          TOKEN_CONTRACT_ADDRESS,
+          {
+            increase_allowance: {
+              spender: MLM_CONTRACT_ADDRESS,
+              amount: "10000",
+            },
+          },
+          stdFee
+        );
         toast.success("APPROVED SUCCESSFULLY" + result.transactionHash);
       }
     } catch (err) {
       const error = err?.message;
       if (error.includes("rejected")) {
-        toast.error("USER DENIED TRANSACTION")
+        toast.error("USER DENIED TRANSACTION");
       } else {
-        toast.error("ERROR WHILE PROVIDING ALLOWANCE")
+        toast.error("ERROR WHILE PROVIDING ALLOWANCE");
       }
     }
   };
@@ -184,29 +209,29 @@ const Landing = () => {
       const response = await cwClient.execute(
         walletAddress,
         MLM_CONTRACT_ADDRESS,
-        { "add_referral": { referrer: referrer } },
+        { add_referral: { referrer: referrer } },
         stdFee
       );
       const txHash = response.transactionHash;
       toast.success("REFERRAL ADDED SUCCESSFULLY");
       addTxLog(txHash, "success", "add-referral");
     } catch (err) {
-      const error = err?.message
+      const error = err?.message;
       switch (true) {
-        case (error.includes("OWN")):
+        case error.includes("OWN"):
           toast.error("REFERRAL CANNOT BE HIS OWN REFERRER");
           break;
-        case (error.includes("ONE")):
+        case error.includes("ONE"):
           toast.error("REFERRAL CANNOT BE ONE OF REFERRER UPLINES");
           break;
-        case (error.includes("addr_validate")):
+        case error.includes("addr_validate"):
           toast.error("INVALID ADDRESS");
           break;
-        case (error.includes("rejected")):
+        case error.includes("rejected"):
           toast.error("USER DENIED TRANSACTION");
           break;
         default:
-          toast.error("SOMETHING WENT WRONG, RETRY AFTER SOME TIME")
+          toast.error("SOMETHING WENT WRONG, RETRY AFTER SOME TIME");
       }
     }
   };
@@ -217,7 +242,7 @@ const Landing = () => {
       const response = await cwClient.execute(
         walletAddress,
         MLM_CONTRACT_ADDRESS,
-        { "pay_referral": { plan_name: planName } },
+        { pay_referral: { plan_name: planName } },
         stdFee
       );
       toast.success("PAID SUCCESSFULLY" + response.transactionHash);
@@ -226,19 +251,19 @@ const Landing = () => {
     } catch (err) {
       const error = err?.message;
       switch (true) {
-        case (error.includes("exist")):
+        case error.includes("exist"):
           toast.error("PLAN DOES NOT EXIST");
           break;
-        case (error.includes("ALREADY")):
+        case error.includes("ALREADY"):
           toast.error("USER ALREADY PAID");
           break;
-        case (error.includes("ENOUGH")):
+        case error.includes("ENOUGH"):
           toast.error("USER BALANCE IS NOT ENOUGH");
           break;
-        case (error.includes("rejected")):
+        case error.includes("rejected"):
           toast.error("USER DENIED TRANSACTION");
           break;
-        case (error.includes("allowance")):
+        case error.includes("allowance"):
           allowance();
           break;
         default:
@@ -281,21 +306,23 @@ const Landing = () => {
         const response = await cwClient.execute(
           walletAddress,
           MLM_CONTRACT_ADDRESS,
-          { "buy_tokens": { amount_to_buy: amount.toString() } },
+          { buy_tokens: { amount_to_buy: amount.toString() } },
           stdFee
         );
         txHash = response.transactionHash;
         addTxLog(txHash, "success", "buy-tokens");
         toast.success("TOKENS BOUGHT SUCCESSFULLY");
       } else {
-        toast.error("TRANSACTION FAILED: USER DOES NOT HAVE ENOUGH COINS TO SEND !");
+        toast.error(
+          "TRANSACTION FAILED: USER DOES NOT HAVE ENOUGH COINS TO SEND !"
+        );
       }
     } catch (err) {
       const error = err?.message;
       if (error.includes("rejected")) {
         toast.error("USER DENIED TRANSACTION");
       } else {
-        toast.error("SOMETHING WENT WRONG, RETRY AFTER SOME TIME")
+        toast.error("SOMETHING WENT WRONG, RETRY AFTER SOME TIME");
       }
     }
   };
@@ -369,147 +396,21 @@ const Landing = () => {
     },
   ];
 
+  const columns = [
+    {
+      title: "Wallet Adress",
+      dataIndex: "referral",
+      key: "referral",
+    },
+    {
+      title: "Amount",
+      dataIndex: "amount_paid",
+      key: "amount_paid",
+    },
+  ];
   return (
-    <div className="flex-and-center landing">
+    <div className="landing">
       <ToastContainer />
-      <Grid container className="m-5">
-        <Grid xs="12" md="6" lg="4" >
-
-          <Grid className="border-radius chain-details p-5">
-            <h2 className="text-black mb-3">User details</h2>
-            <Grid className="mb-3">
-              <Grid span={4} className="d-flex ">
-                <div className="chain-logo">
-                  <img
-                    height="100%"
-                    width="100%"
-                    className="object-fit-contain"
-                    src={CHAIN_LOGO}
-                    alt="chain-logo"
-                  />
-                </div>
-                <Grid span={20} className="ms-2">
-                  <h3 className="text-black">Wallet Address</h3>
-                  <h5 className="address">
-                    {walletAddress}
-                  </h5>
-                </Grid>
-              </Grid>
-            </Grid>
-            <Divider></Divider>
-            <Row span={4} className="d-flex ">
-              <div className="chain-logo">
-                <img
-                  height="100%"
-                  width="100%"
-                  className="object-fit-contain"
-                  src={WALLET}
-                  alt="chain-logo"
-                />
-              </div>
-              <Col span={20} className="ms-3 mb-3">
-                <div className="d-flex mb-2">
-                  <h5 className="text-black"><b>Coin balance :</b></h5>
-                  <h5 className="coins ms-3">{accountBalance.coinBalance} coins</h5>
-                </div>
-                <div className="d-flex align-items-center mb-2">
-                  <h5 className="text-black"><b>Token balance :</b></h5>
-                  <h5 className="tokens ms-3">{accountBalance.tokenBalance} tokens</h5>
-                </div>
-              </Col>
-              <Button
-                variant="contained"
-                className="w-50 mb-2 btn"
-                onClick={getCoinBalance}
-              >
-                check balance
-              </Button>
-              <Button
-                variant="contained"
-                className="w-50 mb-2 btn"
-                onClick={handleOpen}
-              >
-                Get more tokens
-              </Button>
-            </Row>
-          </Grid>
-
-          <Grid className="p-5">
-            <div className="border-radius chain-details">
-              <div className="mb-3">
-                <h2 className="text-black">Add referral</h2>
-                <div>
-                  <TextField
-                    required
-                    id="outlined-text-input"
-                    label={"Referrer address"}
-                    type="text"
-                    className="mt-3 me-3 w-100"
-                    onChange={(e) => handeleReferrerChange(e)}
-                  />
-                </div>
-                <Button
-                  variant="contained"
-                  onClick={addReferrer}
-                  className="mt-4 w-100 border-radius connect-btn btn"
-                >
-                  <h6 className="p-2">Add referral</h6>
-                </Button>
-              </div>
-              <div className="mb-3">
-                <h2 className="text-black mb-3">Pay referral</h2>
-                <Box sx={{ minWidth: 120 }}>
-                  <FormControl fullWidth>
-                    <InputLabel id="select-label">Plan</InputLabel>
-                    <Select
-                      value={planName}
-                      label="Plan"
-                      onChange={handlePlanchange}
-                    >
-                      <MenuItem value="basic">Basic</MenuItem>
-                      <MenuItem value="standard">Standard</MenuItem>
-                      <MenuItem value="premium">Premium</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Box>
-                <Button
-                  variant="contained"
-                  onClick={payReferrer}
-                  className="mt-4 w-100 border-radius connect-btn btn"
-                >
-                  <h6 className="p-2">Pay now</h6>
-                </Button>
-              </div>
-            </div>
-          </Grid>
-        </Grid>
-
-        <Grid xs="12" md="6" lg="4" className="p-5">
-          <Grid lg={{ span: 24 }} className="chain-details border-radius">
-            <h2 className="text-black">Network configuration</h2>
-            <div className="flex-and-between">
-              {map(inputs, (input, i) => (
-                <TextField
-                  key={i}
-                  id="outlined-text-input"
-                  label={input.name}
-                  type="text"
-                  className="mt-3"
-                  onChange={(e) => handleOnchange(input.key, e)}
-                  defaultValue={defaultChainData[input.key]}
-                />
-              ))}
-              <Button
-                variant="contained"
-                onClick={addNetwork}
-                className="mt-4 w-100 border-radius connect-btn btn"
-              >
-                <h6 className="p-2">{connected ? "Connected" : "Connect"} </h6>
-              </Button>
-            </div>
-          </Grid>
-        </Grid>
-      </Grid>
 
       <Modal
         open={open}
@@ -541,24 +442,153 @@ const Landing = () => {
           <Button onClick={handleClose}>close</Button>
         </Box>
       </Modal>
-      <TableContainer component={Paper}>
-        <Table sx={{ minWidth: 100 }} aria-label="customized table">
-          <TableHead>
-            <StyledTableRow>
-              <StyledTableCell>Wallet Address</StyledTableCell>
-              <StyledTableCell>Amount Received</StyledTableCell>
-            </StyledTableRow>
-          </TableHead>
-          <TableBody>
-            {referralList.map((referral, i) => (
-              <StyledTableRow key={i}>
-                <StyledTableCell>{referral['referral']}</StyledTableCell>
-                <StyledTableCell>{referral['amount_paid']}</StyledTableCell>
-              </StyledTableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+
+      <div className="d-flex justify-content-between mb-3">
+        <div className="col m-3">
+          <div className="border border-radius shadow col">
+            <div className="row mb-2 mt-2 d-flex align-items-center">
+              <div className="chain-logo col">
+                <img
+                  height="100%"
+                  width="100%"
+                  className="object-fit-contain"
+                  src={WALLET}
+                  alt="chain-logo"
+                />
+              </div>
+              <div className="row col">
+                <div className="d-flex align-items-center mb-2">
+                  <h5 className="text-black">
+                    <b>Address: </b>
+                  </h5>
+                  <h5 className="primary ms-3">
+                    {walletAddress || "Calib234ijbwdsjfhbsu232i354ybjkhwdbf"}
+                  </h5>
+                </div>
+
+                <div className="d-flex align-items-center mb-2">
+                  <h5 className="text-black">
+                    <b>Coins:</b>
+                  </h5>
+                  <h5 className="primary ms-3">{accountBalance.coinBalance}</h5>
+                </div>
+
+                <div className="d-flex align-items-center mb-2">
+                  <h5 className="text-black">
+                    <b>Tokens:</b>
+                  </h5>
+                  <h5 className="primary ms-3">
+                    {accountBalance.tokenBalance} token
+                  </h5>
+                </div>
+              </div>
+            </div>
+
+            <div className="d-flex justify-content-between">
+              <Button
+                variant="contained"
+                className="w-50 mb-2 btn mr-2"
+                onClick={getCoinBalance}
+              >
+                check balance
+              </Button>
+              <Button
+                variant="contained"
+                className="w-50 mb-2 btn"
+                onClick={handleOpen}
+              >
+                Get more tokens
+              </Button>
+            </div>
+          </div>
+
+          <div className="border-radius border shadow col mt-3">
+            <div className="mb-3 mt-2">
+              <h5 className="text-black bold">
+                <b>Add referral</b>
+              </h5>
+              <div className="d-flex justify-content-between mt-3">
+                <TextField
+                  required
+                  id="outlined-text-input"
+                  label={"Referrer address"}
+                  type="text"
+                  className="me-3 w-100"
+                  onChange={(e) => handeleReferrerChange(e)}
+                />
+                <Button
+                  variant="contained"
+                  onClick={addReferrer}
+                  className="border-radius connect-btn btn"
+                >
+                  <h6 className="p-2">Add referral</h6>
+                </Button>
+              </div>
+            </div>
+
+            <div className="mb-3">
+              <h5 className="text-black bold">
+                <b>Pay referral</b>
+              </h5>
+              <div className="d-flex justify-content-between mt-3">
+                <FormControl fullWidth className="me-3 primary">
+                  <InputLabel id="select-label">Plan</InputLabel>
+                  <Select
+                    value={planName}
+                    label="Plan"
+                    onChange={handlePlanchange}
+                  >
+                    <MenuItem value="basic">Basic</MenuItem>
+                    <MenuItem value="standard">Standard</MenuItem>
+                    <MenuItem value="premium">Premium</MenuItem>
+                  </Select>
+                </FormControl>
+                <Button
+                  variant="contained"
+                  onClick={payReferrer}
+                  className="border-radius connect-btn btn"
+                >
+                  <h6 className="p-2">Pay now</h6>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col border border-radius shadow m-3 d-flex align-content-center mr-2">
+          <div className="mt-4">
+            <h4 className="text-black mt-2 mb-3">
+              <b> Network configuration</b>
+            </h4>
+            <div className="flex-and-between">
+              {map(inputs, (input, i) => (
+                <TextField
+                  key={i}
+                  id="outlined-text-input"
+                  label={input.name}
+                  type="text"
+                  className="mt-3"
+                  onChange={(e) => handleOnchange(input.key, e)}
+                  defaultValue={defaultChainData[input.key]}
+                />
+              ))}
+              <Button
+                variant="contained"
+                onClick={addNetwork}
+                className="mt-3 w-100 border-radius connect-btn btn mb-2"
+              >
+                <h6 className="p-2">{connected ? "Connected" : "Connect"} </h6>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="d-flex justify-content-center">
+        <div className="col-6">
+          <Table dataSource={referralList} columns={columns} />
+        </div>
+      </div>
     </div>
   );
 };
