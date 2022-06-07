@@ -1,12 +1,10 @@
 .bg {
-  /* background-color:#090014; */
   background-color: black;
 }
 
 .chain-details {
   border: 1px solid #ff8925;
   padding: 12px;
-  /* max-height: 400px; */
 }
 
 .key {

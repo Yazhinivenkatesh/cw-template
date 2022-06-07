@@ -5,11 +5,11 @@ import {
 } from "@cosmjs/cosmwasm-stargate";
 import { GasPrice } from "@cosmjs/stargate";
 import { Tendermint34Client } from "@cosmjs/tendermint-rpc";
-import { isEmpty } from "lodash";
+import { isEmpty, map } from "lodash";
 import { constants } from "./constants";
 const chainId = "calibchain";
 
-let accounts, offlineSigner, client, cwClient;
+let accounts, offlineSigner, client, cwClient, referralsArray = [];
 
 export const suggestChain = async (config) => {
   const keplr = window.keplr;
@@ -82,9 +82,6 @@ export const connectWallet = async () => {
     await window.keplr.enable(chainId);
     offlineSigner = window.keplr.getOfflineSigner(chainId);
     accounts = await offlineSigner.getAccounts();
-    // if (accounts !== undefined) {
-    //   localStorage.setItem("account", JSON.stringify(accounts[0]));
-    // }
     return {
       address: accounts[0].address,
     };
@@ -118,6 +115,34 @@ export const getReferralList = async () => {
       referralList.push(response[0]['referrals'])
     }
     return referralList;
+  } catch (err) {
+    console.log("ERR", err)
+  }
+}
+
+export const getReferralData = async () => {
+  try {
+    await initialize();
+    const res = await client.queryContractSmart(constants.MLM_CONTRACT_ADDRESS, { "get_referral_info": { "address": accounts[0].address } })
+    return res;
+  } catch (err) {
+    console.log("ERR", err)
+  }
+}
+
+export const getPaymentStatus = async (referralList) => {
+  try {
+    await initialize();
+    let tempList = referralList[0];
+    if (tempList) {
+      const resData = await Promise.all(tempList.map(async (referral) => {
+        const refAddress = referral.referral;
+        const response = await client.queryContractSmart(constants.MLM_CONTRACT_ADDRESS, { "get_payment_status": { "address": refAddress } })
+        const planName = response['attributes'][1].value;
+        return { ...referral, planName: planName }
+      }));
+      return resData;
+    }
   } catch (err) {
     console.log("ERR", err)
   }

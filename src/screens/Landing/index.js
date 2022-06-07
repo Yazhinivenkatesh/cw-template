@@ -10,23 +10,20 @@ import { Table } from "antd";
 
 import "./landing.css";
 import { TextField } from "@mui/material";
-import { FaucetClient } from "@cosmjs/faucet-client";
 import { suggestChain } from "../../utils/helper";
 
 import axios from "axios";
 import {
   Box,
+  Grid,
   InputLabel,
   MenuItem,
   FormControl,
   Modal,
   Select,
-  TableRow,
   Button,
 } from "@mui/material";
 import { ToastContainer, toast } from "react-toastify";
-import { styled } from "@mui/material/styles";
-import TableCell, { tableCellClasses } from "@mui/material/TableCell";
 import { useSelector } from "react-redux";
 
 import "react-toastify/dist/ReactToastify.css";
@@ -46,40 +43,21 @@ const Landing = () => {
     p: 4,
   };
 
-  let cwClient, client, accounts, offlineSigner, amount, referralList;
+  let cwClient, client, offlineSigner, amount, referralData;
 
   const walletAddress = useSelector(
     (state) => state.rootReducer.wallet.walletAddress
   );
-  const tempRefList = useSelector(
-    (state) => state.rootReducer.wallet.referralList[0]
-  );
+  const referralDetail = useSelector(
+    (state) => state.rootReducer.wallet.referralData
+  )
 
-  if (!isEmpty(tempRefList)) {
-    referralList = tempRefList;
+  if (!isEmpty(referralDetail)) {
+    referralData = referralDetail;
+    // console.log("REFF.......", referralData['user_referrals']?.[0]?.referrals);
   } else {
-    referralList = [];
+    referralData = [];
   }
-
-  const StyledTableCell = styled(TableCell)(({ theme }) => ({
-    [`&.${tableCellClasses.head}`]: {
-      backgroundColor: theme.palette.common.black,
-      color: theme.palette.common.white,
-    },
-    [`&.${tableCellClasses.body}`]: {
-      fontSize: 17,
-    },
-  }));
-
-  const StyledTableRow = styled(TableRow)(({ theme }) => ({
-    "&:nth-of-type(odd)": {
-      backgroundColor: theme.palette.action.hover,
-    },
-    // hide last border
-    "&:last-child td, &:last-child th": {
-      border: 0,
-    },
-  }));
 
   const defaultBalance = {
     coinBalance: "0 calib",
@@ -88,10 +66,8 @@ const Landing = () => {
 
   const [referrer, setReferrer] = useState("");
   const [planName, setPlanName] = useState("");
-  const [faucetAddress, setFaucetAddress] = useState("");
   const [connected, setConnected] = useState(false);
   const [accountBalance, setAccountBalance] = useState(defaultBalance);
-  const [txLogs, addTxLogs] = useState([]);
   const [open, setOpen] = useState(false);
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -148,11 +124,6 @@ const Landing = () => {
     client = await CosmWasmClient.connect("http://localhost:26657");
   };
 
-  const addTxLog = (txHash, status, fnName) => {
-    txLogs.push({ txHash, status, fnName });
-    addTxLogs(txLogs);
-  };
-
   const getCoinBalance = async () => {
     const response = await axios.get(
       `http://localhost:1317/cosmos/bank/v1beta1/balances/${walletAddress}?pagination.limit=1000`
@@ -181,7 +152,7 @@ const Landing = () => {
       });
       if (response.allowance === "0") {
         const result = await cwClient.execute(
-          accounts[0].address,
+          walletAddress,
           TOKEN_CONTRACT_ADDRESS,
           {
             increase_allowance: {
@@ -191,13 +162,15 @@ const Landing = () => {
           },
           stdFee
         );
-        toast.success("APPROVED SUCCESSFULLY" + result.transactionHash);
+        toast.success("APPROVED SUCCESSFULLY");
       }
     } catch (err) {
       const error = err?.message;
       if (error.includes("rejected")) {
         toast.error("USER DENIED TRANSACTION");
-      } else {
+      } else if(error.includes("allowance")) {
+        toast.error("NO ALLOWANCE FOR PROVIDED!");
+      }else{
         toast.error("ERROR WHILE PROVIDING ALLOWANCE");
       }
     }
@@ -212,9 +185,7 @@ const Landing = () => {
         { add_referral: { referrer: referrer } },
         stdFee
       );
-      const txHash = response.transactionHash;
       toast.success("REFERRAL ADDED SUCCESSFULLY");
-      addTxLog(txHash, "success", "add-referral");
     } catch (err) {
       const error = err?.message;
       switch (true) {
@@ -245,9 +216,7 @@ const Landing = () => {
         { pay_referral: { plan_name: planName } },
         stdFee
       );
-      toast.success("PAID SUCCESSFULLY" + response.transactionHash);
-      const txHash = response.transactionHash;
-      addTxLog(txHash, "success", "pay-referral");
+      toast.success("PAID SUCCESSFULLY");
     } catch (err) {
       const error = err?.message;
       switch (true) {
@@ -273,7 +242,6 @@ const Landing = () => {
   };
 
   const buyTokens = async () => {
-    let txHash;
     try {
       await initialize();
       amount = parseFloat(amount);
@@ -299,8 +267,6 @@ const Landing = () => {
       );
 
       if (result.code !== undefined && result.code === 0) {
-        txHash = result.transactionHash;
-        addTxLog(txHash, "success", "sent-coins");
         toast.success("SUCCESSFULLY SENT CALIB COINS");
 
         const response = await cwClient.execute(
@@ -309,8 +275,6 @@ const Landing = () => {
           { buy_tokens: { amount_to_buy: amount.toString() } },
           stdFee
         );
-        txHash = response.transactionHash;
-        addTxLog(txHash, "success", "buy-tokens");
         toast.success("TOKENS BOUGHT SUCCESSFULLY");
       } else {
         toast.error(
@@ -327,15 +291,6 @@ const Landing = () => {
     }
   };
 
-  const getCalib = async (amount) => {
-    try {
-      const faucetClient = new FaucetClient(chainData.faucet);
-      await faucetClient.credit(faucetAddress, chainData.microDenom);
-    } catch (err) {
-      console.log("ERROR in FAUCET", err);
-    }
-  };
-
   const handleOnchange = (key, event) => {
     chainData[key] = event.target.value;
     setChainData(chainData);
@@ -347,10 +302,6 @@ const Landing = () => {
 
   const handeleReferrerChange = (event) => {
     setReferrer(event.target.value);
-  };
-
-  const handleFaucetAddress = (event) => {
-    setFaucetAddress(event.target.value);
   };
 
   const handeleAmountChange = (event) => {
@@ -538,9 +489,9 @@ const Landing = () => {
                     label="Plan"
                     onChange={handlePlanchange}
                   >
-                    <MenuItem value="basic">Basic</MenuItem>
-                    <MenuItem value="standard">Standard</MenuItem>
-                    <MenuItem value="premium">Premium</MenuItem>
+                    <MenuItem value="basic">Basic - 500 Calib Tokens</MenuItem>
+                    <MenuItem value="premium">Premium - 750 Calib Tokens</MenuItem>
+                    <MenuItem value="standard">Standard - 1000 Calib Tokens</MenuItem>
                   </Select>
                 </FormControl>
                 <Button
@@ -584,10 +535,25 @@ const Landing = () => {
         </div>
       </div>
 
-      <div className="d-flex justify-content-center">
-        <div className="col-6">
-          <Table dataSource={referralList} columns={columns} />
-        </div>
+      <div className="d-flex">
+        <Grid container>
+          {referralData['user_referrals'] &&
+            map(referralData['user_referrals'], (data, i) => {
+              return <Grid item lg={6} key={i}>
+                <div>
+                  <div className="p-5">
+                    <h2 className="text-black">Level {i+1}</h2>
+                    <div className="mt-4 col border border-radius shadow">
+                      {referralData['user_referrals'] &&
+                        <Table dataSource={referralData['user_referrals'][i].referrals} columns={columns} />
+                      }
+                    </div>
+                  </div>
+                </div>
+              </Grid>
+            })
+          }
+        </Grid>
       </div>
     </div>
   );
