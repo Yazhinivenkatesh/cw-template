@@ -1,10 +1,9 @@
 import { WalletOutlined } from "@ant-design/icons";
-import { connectWallet, getReferralList, getPaymentStatus, getReferralData } from "../../utils/helper";
+import { connectWallet, getReferralData } from "../../utils/helper";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   saveWalletAddress,
-  saveReferralDetail,
   saveReferralDatas
 } from "../../redux/Wallet/actions";
 import "./header.css";
@@ -24,11 +23,8 @@ const Header = () => {
     const response = await connectWallet();
     if (response != null) {
       dispatch(saveWalletAddress(response.address));
-      // const result = await getReferralList();
       const refData = await getReferralData();
       dispatch(saveReferralDatas(refData));
-      // const resData = await getPaymentStatus(result);
-      // dispatch(saveReferralDetail(resData));
     }
   };
 

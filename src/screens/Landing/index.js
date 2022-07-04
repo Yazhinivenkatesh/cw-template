@@ -54,7 +54,6 @@ const Landing = () => {
 
   if (!isEmpty(referralDetail)) {
     referralData = referralDetail;
-    // console.log("REFF.......", referralData['user_referrals']?.[0]?.referrals);
   } else {
     referralData = [];
   }
@@ -124,6 +123,17 @@ const Landing = () => {
     client = await CosmWasmClient.connect("http://localhost:26657");
   };
 
+  const getDetails = async () => {
+    debugger
+    const res = await axios.post(`http://localhost:9000/animals`, {
+      name: 'cat',
+      colour: 'white'
+    })
+    console.log("RESPONSE...", res);
+    const result = await axios.get(`http://localhost:9000/animals/all`);
+    console.log("Result", result)
+  }
+
   const getCoinBalance = async () => {
     const response = await axios.get(
       `http://localhost:1317/cosmos/bank/v1beta1/balances/${walletAddress}?pagination.limit=1000`
@@ -169,7 +179,7 @@ const Landing = () => {
       if (error.includes("rejected")) {
         toast.error("USER DENIED TRANSACTION");
       } else if(error.includes("allowance")) {
-        toast.error("NO ALLOWANCE FOR PROVIDED!");
+        toast.error("NO ALLOWANCE PROVIDED!");
       }else{
         toast.error("ERROR WHILE PROVIDING ALLOWANCE");
       }
@@ -268,6 +278,7 @@ const Landing = () => {
 
       if (result.code !== undefined && result.code === 0) {
         toast.success("SUCCESSFULLY SENT CALIB COINS");
+        console.log("hash", result.transactionHash)
 
         const response = await cwClient.execute(
           walletAddress,
@@ -276,6 +287,7 @@ const Landing = () => {
           stdFee
         );
         toast.success("TOKENS BOUGHT SUCCESSFULLY");
+        console.log("hash", response.transactionHash)
       } else {
         toast.error(
           "TRANSACTION FAILED: USER DOES NOT HAVE ENOUGH COINS TO SEND !"
@@ -371,7 +383,8 @@ const Landing = () => {
       >
         <Box sx={style}>
           <div className="mb-3">
-            <h2 className="text-black">Buy Tokens</h2>
+            <h2 className="text-black">Buy Tokens</h2><p>1 calib = 10 tokens</p>
+            <p className="text-black"><b>(1 Calib = 10 Calib Tokens)</b></p>
             <div>
               <TextField
                 required
@@ -439,7 +452,7 @@ const Landing = () => {
               <Button
                 variant="contained"
                 className="w-50 mb-2 btn mr-2"
-                onClick={getCoinBalance}
+                onClick={getDetails}
               >
                 check balance
               </Button>
@@ -490,8 +503,8 @@ const Landing = () => {
                     onChange={handlePlanchange}
                   >
                     <MenuItem value="basic">Basic - 500 Calib Tokens</MenuItem>
-                    <MenuItem value="premium">Premium - 750 Calib Tokens</MenuItem>
-                    <MenuItem value="standard">Standard - 1000 Calib Tokens</MenuItem>
+                    <MenuItem value="standard">Standard - 750 Calib Tokens</MenuItem>
+                    <MenuItem value="premium">Premium - 1000 Calib Tokens</MenuItem>
                   </Select>
                 </FormControl>
                 <Button
