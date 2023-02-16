@@ -1,7 +1,7 @@
 [package]
-name = "token-contract"
+name = "mlm-contract"
 version = "0.1.0"
-authors = ["Yazhinivenkatesh <yazhinivenkatesh2000@gmail.com>"]
+authors = ["{{authors}}"]
 edition = "2018"
 
 exclude = [
@@ -44,8 +44,6 @@ cosmwasm-std = { version = "1.0.0-beta6" }
 cosmwasm-storage = { version = "1.0.0-beta6" }
 cw-storage-plus = "0.13"
 cw2 = "0.13"
-cw20 = { version = "0.13.1" }
-cw20-base = { version = "0.13.1" }
 schemars = "0.8"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0" }

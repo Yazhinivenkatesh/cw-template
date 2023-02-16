@@ -1,0 +1,28 @@
+[package]
+name = "cw-20-contrat"
+version = "0.1.0"
+authors = ["Yazhinivenkatesh <yazhinivenkatesh2000@gmail.com>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+backtraces = ["cosmwasm-std/backtraces"]
+# use library feature to disable all instantiate/execute/query exports
+library = []
+
+[dependencies]
+cosmwasm-std = { version = "1.0.0-beta6" }
+cosmwasm-storage = { version = "1.0.0-beta6" }
+cw-storage-plus = "0.13"
+cw2 = "0.13"
+cw20 = { version = "0.13.1" }
+cw20-base = { version = "0.13.1" }
+schemars = "0.8"
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+thiserror = { version = "1.0" }
+
+[dev-dependencies]
+cosmwasm-schema = { version = "1.0.0-beta6" }
+cw-multi-test = "0.13"

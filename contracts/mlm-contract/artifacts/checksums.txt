@@ -1,0 +1,1 @@
+a959eea0b285c767a360d10722dae32adb44fae2a05f2a0ae0baabc9a4d3ccf3  mlm_contract.wasm

@@ -12,13 +12,13 @@ use cw20::{
 
 use crate::allowances::{
     execute_burn_from, execute_decrease_allowance, execute_increase_allowance, execute_send_from,
-    execute_transfer_from, query_allowance,
+    execute_transfer_from, query_allowance, execute_add_plan,
 };
 use crate::enumerable::{query_all_accounts, query_all_allowances};
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, HandleMsg, InstantiateMsg, InstantiatePlan, QueryMsg};
 use crate::state::{
-    MinterData, TokenInfo, BALANCES, LOGO, MARKETING_INFO, TOKEN_INFO,
+    MinterData, PlanDetail, TokenInfo, BALANCES, LOGO, MARKETING_INFO, PLAN_DETAIL, TOKEN_INFO,
 };
 
 // version info for migration info
@@ -227,7 +227,43 @@ pub fn execute(
             marketing,
         } => execute_update_marketing(deps, env, info, project, description, marketing),
         ExecuteMsg::UploadLogo(logo) => execute_upload_logo(deps, env, info, logo),
+        // ExecuteMsg::AddPlan { name, price } => execute_add_plan(deps, env, info, name, price),
     }
+}
+
+pub fn handle(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    msg: HandleMsg,
+) -> Result<Response, ContractError> {
+    match msg {
+        HandleMsg::AddPlan { name, price } => handle_add_plan(deps, env, info, name, price),
+    }
+}
+
+pub fn handle_add_plan(
+    _deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    // msg: InstantiatePlan,
+    name: String,
+    price: Uint128,
+) -> Result<Response, ContractError> {
+    if price == Uint128::zero() {
+        return Err(ContractError::InvalidZeroAmount {});
+    }
+    // let data = PlanDetail {
+    //     name: msg.name,
+    //     price: msg.price,
+    // };
+    // PLAN_DETAIL.save(_deps.storage, &data)?;
+    let res = Response::new()
+        .add_attribute("action", "add-plan")
+        .add_attribute("from", info.sender)
+        .add_attribute("plan-name", name)
+        .add_attribute("price", price);
+    Ok(res)
 }
 
 pub fn execute_transfer(
